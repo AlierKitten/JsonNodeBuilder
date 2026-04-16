@@ -17,6 +17,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: cargo build --verbose --manifest-path src-tauri/Cargo.toml
+      run: cargo build --verbose --manifest-path src-tauri/Cargo.toml --release
     - name: Run tests
       run: cargo test --verbose --manifest-path src-tauri/Cargo.toml
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: |
+          src-tauri/target/release/jsonnodebuilder.exe
+          src-tauri/target/release/*.dll
+        retention-days: 7
