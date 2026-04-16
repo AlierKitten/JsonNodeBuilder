@@ -79,3 +79,64 @@
     -moz-user-select: text;
     -ms-user-select: text;
 }
+
+/* 彩虹括号样式 */
+.bracket-level-0 { color: #ff6b6b; }
+.bracket-level-1 { color: #feca57; }
+.bracket-level-2 { color: #48dbfb; }
+.bracket-level-3 { color: #ff9ff3; }
+.bracket-level-4 { color: #54a0ff; }
+.bracket-level-5 { color: #5f27cd; }
+.bracket-level-6 { color: #00d2d3; }
+.bracket-level-7 { color: #ff6b81; }
+.bracket-level-8 { color: #7bed9f; }
+.bracket-level-9 { color: #70a1ff; }
+
+/* JSON错误下波浪线标注 */
+.json-error {
+    position: relative;
+    cursor: help;
+    background: linear-gradient(to top, rgba(255, 71, 87, 0.05), transparent);
+}
+
+.json-error:hover::after {
+    content: attr(data-error);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2f3542;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    white-space: pre-wrap;
+    max-width: 300px;
+    word-wrap: break-word;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    pointer-events: none;
+    line-height: 1.5;
+}
+
+.json-error-indicator {
+    display: inline-block;
+    text-decoration: underline wavy #ff4757;
+    text-decoration-thickness: 2px;
+    padding: 4px 8px;
+    background: rgba(255, 71, 87, 0.1);
+    border-radius: 4px;
+    cursor: help;
+    position: relative;
+    font-weight: bold;
+    color: #ff4757;
+    font-size: 14px;
+    user-select: none;
+}
+
+/* JSON 语法高亮 */
+.json-key { color: #0984e3; }
+.json-string { color: #00b894; }
+.json-number { color: #d63031; }
+.json-boolean { color: #6c5ce7; }
+.json-null { color: #636e72; }
