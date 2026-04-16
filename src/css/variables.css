@@ -1,0 +1,27 @@
+:root {
+    /* 基础尺寸变量（会根据缩放动态调整） */
+    --node-width: 260px;
+    --font-size-base: 12px;
+    --font-size-sm: 11px;
+    --font-size-lg: 14px;
+    --padding-base: 10px;
+    --padding-sm: 8px;
+    --padding-xs: 3px;
+    --border-radius: 8px;
+    --border-radius-sm: 4px;
+    --gap: 5px;
+    --stroke-width: 2px;
+    --header-height: 40px;
+    --field-height: 35px;
+    --actions-height: 45px;
+    --input-height-key: 80px;
+    --input-height-val: 100px;
+    --input-height-name: 140px;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    /* 颜色变量 */
+    --primary: #4a90e2;
+    --danger: #ff4d4f;
+    --bg-color: #f0f2f5;
+    --zoom-factor: 1;
+}
