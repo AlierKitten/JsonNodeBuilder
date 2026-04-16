@@ -10,17 +10,23 @@
 <body>
     <div id="app">
         <div id="canvas-container">
-            <svg id="lines-svg"></svg>
-            <div id="nodes-layer"></div>
+            <div id="canvas-content">
+                <svg id="lines-svg"></svg>
+                <div id="nodes-layer"></div>
+            </div>
         </div>
         <div id="sidebar">
-            <div class="sidebar-header">生成的 JSON 源码</div>
+            <div class="sidebar-header">
+                <span>JSON 源码</span>
+                <button class="btn-copy" id="copy-btn" onclick="copyJSON()">复制</button>
+            </div>
             <div id="json-container">
                 <div id="line-numbers"></div>
                 <pre id="json-preview"></pre>
             </div>
         </div>
     </div>
+    <div id="zoom-info">Ctrl+滚轮: 缩放 | 拖动: 移动画布</div>
     <script src="main.js"></script>
 </body>
 

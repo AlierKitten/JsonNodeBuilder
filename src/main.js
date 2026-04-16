@@ -15,6 +15,19 @@ const svgLayer = document.getElementById('lines-svg');
 const jsonPreview = document.getElementById('json-preview');
 const lineNumbers = document.getElementById('line-numbers');
 const canvasContainer = document.getElementById('canvas-container');
+const canvasContent = document.getElementById('canvas-content');
+const sidebar = document.getElementById('sidebar');
+
+// 拖动相关变量
+let isDragging = false;
+let startX, startY;
+let panX = 0, panY = 0;
+
+// 缩放相关变量
+let currentZoom = 1;
+const minZoom = 0.5;
+const maxZoom = 3;
+const zoomStep = 0.1;
 
 function render() {
     // 清空画布
@@ -32,8 +45,8 @@ function render() {
 function renderNode(node, parentId) {
     const el = document.createElement('div');
     el.className = `node ${node.id === 'root' ? 'root-node' : ''}`;
-    el.style.left = node.x + 'px';
-    el.style.top = node.y + 'px';
+    el.style.left = (node.x * currentZoom) + 'px';
+    el.style.top = (node.y * currentZoom) + 'px';
 
     const isRoot = node.id === 'root';
 
@@ -41,8 +54,8 @@ function renderNode(node, parentId) {
     const header = document.createElement('div');
     header.className = 'node-header';
     header.innerHTML = `
-        <input class="node-name" value="${isRoot ? '{ JSON Root }' : node.name}" 
-               ${isRoot ? 'readonly' : ''} 
+        <input class="node-name" value="${isRoot ? '{ JSON Root }' : node.name}"
+               ${isRoot ? 'readonly' : ''}
                oninput="updateNodeName('${node.id}', this.value)">
         ${!isRoot ? `<button class="btn-del" onclick="deleteNode('${parentId}', '${node.id}')">×</button>` : ''}
     `;
@@ -77,7 +90,12 @@ function renderNode(node, parentId) {
     node.children.forEach((child) => {
         renderNode(child, node.id);
         // 连线
-        drawLine(node.x + 260, node.y + 40, child.x, child.y + 40);
+        drawLine(
+            (node.x + 260) * currentZoom,
+            (node.y + 40) * currentZoom,
+            child.x * currentZoom,
+            (child.y + 40) * currentZoom
+        );
     });
 }
 
@@ -133,11 +151,12 @@ window.deleteNode = (pId, cId) => {
 
 function drawLine(x1, y1, x2, y2) {
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    const cp1 = x1 + 50; const cp2 = x2 - 50;
+    const cp1 = x1 + (50 * currentZoom);
+    const cp2 = x2 - (50 * currentZoom);
     path.setAttribute('d', `M ${x1} ${y1} C ${cp1} ${y1}, ${cp2} ${y2}, ${x2} ${y2}`);
     path.setAttribute('stroke', '#adb5bd');
     path.setAttribute('fill', 'transparent');
-    path.setAttribute('stroke-width', '2');
+    path.setAttribute('stroke-width', 2 * currentZoom);
     svgLayer.appendChild(path);
 }
 
@@ -172,13 +191,21 @@ function syncJSON() {
     // 生成行号
     const lines = jsonText.split('\n');
     lineNumbers.innerHTML = lines.map((_, i) => i + 1).join('<br>');
+
+    // 自适应行号宽度（根据数字位数计算）
+    const maxLineNumber = lines.length;
+    const digitWidth = 9; // 每位数字的宽度
+    const paddingWidth = 20; // 左右内边距
+    const lineNumberWidth = (maxLineNumber.toString().length * digitWidth) + paddingWidth;
+    lineNumbers.style.width = lineNumberWidth + 'px';
+    lineNumbers.style.minWidth = 'auto';
 }
 
 // 动态调整画布大小
 function resizeCanvas() {
     const container = canvasContainer;
-    const maxRight = Math.max(...getAllNodes().map(n => n.x + 260));
-    const maxBottom = Math.max(...getAllNodes().map(n => n.y + getNodeHeight(n)));
+    const maxRight = Math.max(...getAllNodes().map(n => (n.x + 260) * currentZoom));
+    const maxBottom = Math.max(...getAllNodes().map(n => (n.y + getNodeHeight(n)) * currentZoom));
 
     const neededWidth = Math.max(container.clientWidth, maxRight + 100);
     const neededHeight = Math.max(container.clientHeight, maxBottom + 100);
@@ -187,6 +214,74 @@ function resizeCanvas() {
     svgLayer.style.height = neededHeight + 'px';
     svgLayer.style.minWidth = neededWidth + 'px';
     svgLayer.style.minHeight = neededHeight + 'px';
+    nodesLayer.style.width = neededWidth + 'px';
+    nodesLayer.style.height = neededHeight + 'px';
+}
+
+// 应用变换（平移）
+function applyTransform() {
+    // 只使用平移，不使用scale
+    canvasContent.style.transform = `translate3d(${panX}px, ${panY}px, 0)`;
+    updateZoomInfo();
+}
+
+// 更新缩放相关的CSS样式
+function updateZoomStyles() {
+    const root = document.documentElement;
+    root.style.setProperty('--zoom-factor', currentZoom);
+    root.style.setProperty('--node-width', (260 * currentZoom) + 'px');
+    root.style.setProperty('--font-size-base', (12 * currentZoom) + 'px');
+    root.style.setProperty('--font-size-sm', (11 * currentZoom) + 'px');
+    root.style.setProperty('--font-size-lg', (14 * currentZoom) + 'px');
+    root.style.setProperty('--padding-base', (10 * currentZoom) + 'px');
+    root.style.setProperty('--padding-sm', (8 * currentZoom) + 'px');
+    root.style.setProperty('--padding-xs', (3 * currentZoom) + 'px');
+    root.style.setProperty('--border-radius', (8 * currentZoom) + 'px');
+    root.style.setProperty('--border-radius-sm', (4 * currentZoom) + 'px');
+    root.style.setProperty('--gap', (5 * currentZoom) + 'px');
+    root.style.setProperty('--stroke-width', (2 * currentZoom) + 'px');
+    root.style.setProperty('--header-height', (40 * currentZoom) + 'px');
+    root.style.setProperty('--field-height', (35 * currentZoom) + 'px');
+    root.style.setProperty('--actions-height', (45 * currentZoom) + 'px');
+    root.style.setProperty('--input-height-key', (80 * currentZoom) + 'px');
+    root.style.setProperty('--input-height-val', (100 * currentZoom) + 'px');
+    root.style.setProperty('--input-height-name', (140 * currentZoom) + 'px');
+    const shadowBlur = 24 * currentZoom;
+    const shadowY = 12 * currentZoom;
+    const shadowX = 4 * currentZoom;
+    root.style.setProperty('--shadow', `${shadowX}px ${shadowY}px ${shadowBlur}px rgba(0, 0, 0, 0.1)`);
+}
+
+// 更新缩放相关的CSS样式
+function updateZoomStyles() {
+    const root = document.documentElement;
+    root.style.setProperty('--zoom-factor', currentZoom);
+    root.style.setProperty('--node-width', (260 * currentZoom) + 'px');
+    root.style.setProperty('--font-size-base', (12 * currentZoom) + 'px');
+    root.style.setProperty('--font-size-sm', (11 * currentZoom) + 'px');
+    root.style.setProperty('--font-size-lg', (14 * currentZoom) + 'px');
+    root.style.setProperty('--padding-base', (10 * currentZoom) + 'px');
+    root.style.setProperty('--padding-sm', (8 * currentZoom) + 'px');
+    root.style.setProperty('--padding-xs', (3 * currentZoom) + 'px');
+    root.style.setProperty('--border-radius', (8 * currentZoom) + 'px');
+    root.style.setProperty('--border-radius-sm', (4 * currentZoom) + 'px');
+    root.style.setProperty('--gap', (5 * currentZoom) + 'px');
+    root.style.setProperty('--stroke-width', (2 * currentZoom) + 'px');
+    root.style.setProperty('--header-height', (40 * currentZoom) + 'px');
+    root.style.setProperty('--field-height', (35 * currentZoom) + 'px');
+    root.style.setProperty('--actions-height', (45 * currentZoom) + 'px');
+    root.style.setProperty('--input-height-key', (80 * currentZoom) + 'px');
+    root.style.setProperty('--input-height-val', (100 * currentZoom) + 'px');
+    root.style.setProperty('--input-height-name', (140 * currentZoom) + 'px');
+    root.style.setProperty('--shadow', `${4 * currentZoom}px ${12 * currentZoom}px ${24 * currentZoom}px rgba(0, 0, 0, 0.1)`);
+}
+
+// 更新缩放信息
+function updateZoomInfo() {
+    const zoomInfo = document.getElementById('zoom-info');
+    if (zoomInfo) {
+        zoomInfo.innerText = `缩放: ${Math.round(currentZoom * 100)}% | Ctrl+滚轮: 缩放 | 拖动: 移动画布`;
+    }
 }
 
 // 获取所有节点
@@ -200,25 +295,127 @@ function getAllNodes(node = treeData) {
 
 // 计算节点高度
 function getNodeHeight(node) {
-    const headerHeight = 40;
-    const fieldHeight = 35;
-    const actionsHeight = 45;
+    const headerHeight = 40 * currentZoom;
+    const fieldHeight = 35 * currentZoom;
+    const actionsHeight = 45 * currentZoom;
     return headerHeight + (node.fields.length * fieldHeight) + actionsHeight;
 }
 
 // 初始渲染
+updateZoomStyles();
 render();
-resizeCanvas();
+applyTransform();
 
 // 监听窗口大小变化
-window.addEventListener('resize', resizeCanvas);
-
-// 监听画布滚动
-canvasContainer.addEventListener('scroll', () => {
-    // 可以在这里添加额外的逻辑，比如同步滚动
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    applyTransform();
 });
 
 // 同步 JSON 源码区和行号的滚动
 jsonPreview.addEventListener('scroll', () => {
     lineNumbers.scrollTop = jsonPreview.scrollTop;
 });
+
+// 复制JSON功能
+window.copyJSON = () => {
+    const jsonText = jsonPreview.innerText;
+    navigator.clipboard.writeText(jsonText).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const originalText = btn.innerText;
+        btn.innerText = '已复制';
+        btn.style.background = '#52c41a';
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('复制失败:', err);
+        alert('复制失败，请手动复制');
+    });
+};
+
+// 禁用右键菜单
+canvasContainer.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    return false;
+});
+
+// 禁用侧边栏右键菜单
+sidebar.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    return false;
+});
+
+// 手掌拖动功能
+canvasContainer.addEventListener('mousedown', (e) => {
+    // 如果点击的是节点内部的输入框或按钮，不触发拖动
+    if (e.target.closest('.node') || e.target.closest('input') || e.target.closest('button')) {
+        return;
+    }
+
+    // 只允许左键拖动
+    if (e.button !== 0) {
+        return;
+    }
+
+    isDragging = true;
+    canvasContainer.classList.add('panning');
+    startX = e.clientX;
+    startY = e.clientY;
+
+    // 防止选中文字
+    e.preventDefault();
+});
+
+canvasContainer.addEventListener('mouseleave', () => {
+    isDragging = false;
+    canvasContainer.classList.remove('panning');
+});
+
+canvasContainer.addEventListener('mouseup', () => {
+    isDragging = false;
+    canvasContainer.classList.remove('panning');
+});
+
+canvasContainer.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+
+    e.preventDefault();
+
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    panX += dx;
+    panY += dy;
+
+    startX = e.clientX;
+    startY = e.clientY;
+
+    applyTransform();
+});
+
+// 鼠标滚轮缩放功能
+canvasContainer.addEventListener('wheel', (e) => {
+    e.preventDefault();
+
+    // 如果按住Ctrl键，则是缩放
+    if (e.ctrlKey || e.metaKey) {
+        const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+        const newZoom = Math.min(Math.max(currentZoom + delta, minZoom), maxZoom);
+
+        if (newZoom !== currentZoom) {
+            currentZoom = newZoom;
+            updateZoomStyles();
+            render();
+            resizeCanvas();
+            applyTransform();
+        }
+    }
+    // 否则是平移
+    else {
+        panX -= e.deltaX;
+        panY -= e.deltaY;
+        applyTransform();
+    }
+}, { passive: false });
