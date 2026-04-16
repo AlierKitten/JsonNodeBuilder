@@ -5,7 +5,6 @@ let treeData = {
     x: 50, y: 50,
     fields: [
         { id: "f1", key: "id", value: "1" },
-        { id: "f2", key: "name", value: "New Item" }
     ],
     children: []
 };
@@ -57,7 +56,7 @@ function renderNode(node, parentId) {
         <input class="node-name" value="${isRoot ? '{ JSON Root }' : node.name}"
                ${isRoot ? 'readonly' : ''}
                oninput="updateNodeName('${node.id}', this.value)">
-        ${!isRoot ? `<button class="btn-del" onclick="deleteNode('${parentId}', '${node.id}')">×</button>` : ''}
+        ${!isRoot ? `<button class="btn-del" onclick="deleteNode('${parentId}', '${node.id}')"></button>` : ''}
     `;
     el.appendChild(header);
 
@@ -69,7 +68,7 @@ function renderNode(node, parentId) {
             <input class="key-input" value="${f.key}" oninput="updateField('${node.id}', '${f.id}', 'key', this.value)">
             <span>:</span>
             <input class="val-input" value="${f.value}" oninput="updateField('${node.id}', '${f.id}', 'value', this.value)">
-            <button class="btn-del" onclick="deleteField('${node.id}', '${f.id}')">×</button>
+            <button class="btn-del" onclick="deleteField('${node.id}', '${f.id}')"></button>
         `;
         el.appendChild(row);
     });
