@@ -12,6 +12,17 @@ function findNode(root, id) {
     return null;
 }
 
+// 查找父节点
+function findParent(root, childId) {
+    if (!root.children) return null;
+    for (let child of root.children) {
+        if (child.id === childId) return root;
+        const found = findParent(child, childId);
+        if (found) return found;
+    }
+    return null;
+}
+
 // 获取所有节点
 function getAllNodes(node = treeData) {
     let nodes = [node];
@@ -27,6 +38,22 @@ function getNodeHeight(node) {
     const fieldHeight = 35 * currentZoom;
     const actionsHeight = 45 * currentZoom;
     return headerHeight + (node.fields.length * fieldHeight) + actionsHeight;
+}
+
+// 重新计算子节点的位置
+function relayoutChildren(parent) {
+    let yOffset = parent.y;
+    parent.children.forEach((child, index) => {
+        if (index > 0) {
+            const prevSibling = parent.children[index - 1];
+            yOffset += getNodeHeight(prevSibling) + 30; // 30px的间距
+        }
+        child.y = yOffset;
+        // 递归处理子节点的子节点
+        if (child.children.length > 0) {
+            relayoutChildren(child);
+        }
+    });
 }
 
 // 绘制连线
@@ -65,8 +92,11 @@ function renderNode(node, parentId) {
     node.fields.forEach((f) => {
         const row = document.createElement('div');
         row.className = 'field-row';
+        const isArray = node.type === 'array';
+        const keyReadonlyAttr = isArray ? 'readonly' : '';
+        const keyDisabledClass = isArray ? 'array-key' : '';
         row.innerHTML = `
-            <input class="key-input" value="${f.key}" oninput="updateField('${node.id}', '${f.id}', 'key', this.value)">
+            <input class="key-input ${keyDisabledClass}" value="${f.key}" ${keyReadonlyAttr} oninput="updateField('${node.id}', '${f.id}', 'key', this.value)">
             <span>:</span>
             <input class="val-input" value="${f.value}" oninput="updateField('${node.id}', '${f.id}', 'value', this.value)">
             <button class="btn-del" onclick="deleteField('${node.id}', '${f.id}')"></button>
@@ -118,11 +148,29 @@ window.updateField = (id, fId, type, val) => {
 window.addField = (id) => {
     const n = findNode(treeData, id);
     n.fields.push({ id: Date.now().toString(), key: "key", value: "val" });
+    // 添加字段后重新布局子节点
+    if (n.children.length > 0) {
+        relayoutChildren(n);
+    }
+    // 重新布局当前节点的兄弟节点（找到父节点并重新布局）
+    const parent = findParent(treeData, id);
+    if (parent) {
+        relayoutChildren(parent);
+    }
     render();
 };
 window.deleteField = (nId, fId) => {
     const n = findNode(treeData, nId);
     n.fields = n.fields.filter(f => f.id !== fId);
+    // 删除字段后重新布局子节点
+    if (n.children.length > 0) {
+        relayoutChildren(n);
+    }
+    // 重新布局当前节点的兄弟节点（找到父节点并重新布局）
+    const parent = findParent(treeData, nId);
+    if (parent) {
+        relayoutChildren(parent);
+    }
     render();
 };
 window.addChild = (id, type) => {
@@ -132,15 +180,18 @@ window.addChild = (id, type) => {
         name: type,
         type: type,
         x: p.x + 300,
-        y: p.y + (p.children.length * 150),
+        y: p.y,
         fields: [{ id: "f" + Date.now(), key: "key", value: "val" }],
         children: []
     };
     p.children.push(newNode);
+    relayoutChildren(p);
     render();
 };
 window.deleteNode = (pId, cId) => {
     const p = findNode(treeData, pId);
     p.children = p.children.filter(c => c.id !== cId);
+    // 删除节点后重新布局子节点
+    relayoutChildren(p);
     render();
 };
