@@ -1,0 +1,112 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.id }}
+      upload_url: ${{ steps.create-release.outputs.upload_url }}
+      version: ${{ steps.set-version.outputs.version }}
+      git_hash: ${{ steps.git-hash.outputs.git_hash }}
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Git Hash
+        id: git-hash
+        run: |
+          hash=$(git rev-parse --short HEAD)
+          echo "git_hash=$hash" >> $GITHUB_OUTPUT
+          echo "Git Hash: $hash"
+
+      - name: Set installer version
+        id: set-version
+        run: |
+          tag="${{ github.ref_name }}"
+          echo "Original tag: $tag"
+          if [[ $tag =~ ^v(.*)$ ]]; then
+            tag="${BASH_REMATCH[1]}"
+          fi
+          echo "Tag after removing v: $tag"
+          IFS='.' read -ra versionParts <<< "$tag"
+          echo "Version parts: ${versionParts[@]}"
+          while [ ${#versionParts[@]} -lt 4 ]; do
+            versionParts+=("0")
+          done
+          version=$(IFS='.'; echo "${versionParts[*]:0:4}")
+          echo "Final version: $version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          CURRENT_TAG="${{ github.ref_name }}"
+          echo "Current tag: $CURRENT_TAG"
+          
+          # Get all tags sorted by version
+          git fetch --tags
+          ALL_TAGS=$(git tag --sort=-v:refname)
+          
+          # Find previous tag
+          PREVIOUS_TAG=""
+          FOUND_CURRENT=false
+          for tag in $ALL_TAGS; do
+            if [ "$tag" = "$CURRENT_TAG" ]; then
+              FOUND_CURRENT=true
+            elif [ "$FOUND_CURRENT" = true ]; then
+              PREVIOUS_TAG="$tag"
+              break
+            fi
+          done
+          
+          echo "Previous tag: $PREVIOUS_TAG"
+          
+          # Generate changelog
+          CHANGELOG=""
+          if [ -n "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log --oneline --pretty=format:"- %s" "$PREVIOUS_TAG".."$CURRENT_TAG" 2>/dev/null || echo "")
+          else
+            # First tag, get all commits
+            CHANGELOG=$(git log --oneline --pretty=format:"- %s" 2>/dev/null || echo "")
+          fi
+          
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="- Initial release"
+          fi
+          
+          # Escape for GitHub Actions output
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create draft release
+        id: create-release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          body: |
+            ## 📝 Change Log
+            ${{ steps.changelog.outputs.changelog }}
+
+            ## 📥 Downloads
+            **Windows**: ⏳ Building...
+            **Linux**: ⏳ Building...
+
+            ---
+            *Auto built with GitHub Actions*

@@ -1,4 +1,4 @@
-name: Rust Build
+name: Build and Release
 
 on:
   push:
@@ -12,6 +12,8 @@ jobs:
   build-windows-x64:
     name: Windows x64
     runs-on: windows-latest
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -22,16 +24,19 @@ jobs:
     - name: Build NSIS installer
       run: cargo tauri build --verbose
       working-directory: src-tauri
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: windows-x64-nsis
-        path: src-tauri/target/release/bundle/nsis/**
-        retention-days: 7
+        tag_name: ${{ github.ref_name }}
+        files: src-tauri/target/release/bundle/nsis/**
 
   build-windows-arm64:
     name: Windows ARM64
     runs-on: windows-11-arm
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -42,16 +47,19 @@ jobs:
     - name: Build NSIS installer for ARM64
       run: cargo tauri build --verbose
       working-directory: src-tauri
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: windows-arm64-nsis
-        path: src-tauri/target/release/bundle/nsis/**
-        retention-days: 7
+        tag_name: ${{ github.ref_name }}
+        files: src-tauri/target/release/bundle/nsis/**
 
   build-linux-x64:
     name: Linux x64 (DEB + RPM)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -70,22 +78,21 @@ jobs:
     - name: Build DEB and RPM packages
       run: cargo tauri build --verbose --bundles deb,rpm
       working-directory: src-tauri
-    - name: Upload DEB artifacts
-      uses: actions/upload-artifact@v4
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: linux-x64-deb
-        path: src-tauri/target/release/bundle/deb/**
-        retention-days: 7
-    - name: Upload RPM artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-x64-rpm
-        path: src-tauri/target/release/bundle/rpm/**
-        retention-days: 7
+        tag_name: ${{ github.ref_name }}
+        files: |
+          src-tauri/target/release/bundle/deb/**
+          src-tauri/target/release/bundle/rpm/**
 
   build-linux-arm64:
     name: Linux ARM64 (DEB + RPM)
     runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -109,15 +116,90 @@ jobs:
     - name: Build DEB and RPM packages for ARM64
       run: cargo tauri build --verbose --bundles deb,rpm
       working-directory: src-tauri
-    - name: Upload DEB artifacts
-      uses: actions/upload-artifact@v4
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: linux-arm64-deb
-        path: src-tauri/target/release/bundle/deb/**
-        retention-days: 7
-    - name: Upload RPM artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-arm64-rpm
-        path: src-tauri/target/release/bundle/rpm/**
-        retention-days: 7
+        tag_name: ${{ github.ref_name }}
+        files: |
+          src-tauri/target/release/bundle/deb/**
+          src-tauri/target/release/bundle/rpm/**
+
+  update-release-body:
+    name: Update Release Body
+    runs-on: ubuntu-latest
+    needs: [build-windows-x64, build-windows-arm64, build-linux-x64, build-linux-arm64]
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          CURRENT_TAG="${{ github.ref_name }}"
+          echo "Current tag: $CURRENT_TAG"
+          
+          # Get all tags sorted by version
+          git fetch --tags
+          ALL_TAGS=$(git tag --sort=-v:refname)
+          
+          # Find previous tag
+          PREVIOUS_TAG=""
+          FOUND_CURRENT=false
+          for tag in $ALL_TAGS; do
+            if [ "$tag" = "$CURRENT_TAG" ]; then
+              FOUND_CURRENT=true
+            elif [ "$FOUND_CURRENT" = true ]; then
+              PREVIOUS_TAG="$tag"
+              break
+            fi
+          done
+          
+          echo "Previous tag: $PREVIOUS_TAG"
+          
+          # Generate changelog
+          CHANGELOG=""
+          if [ -n "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log --oneline --pretty=format:"- %s" "$PREVIOUS_TAG".."$CURRENT_TAG" 2>/dev/null || echo "")
+          else
+            # First tag, get all commits
+            CHANGELOG=$(git log --oneline --pretty=format:"- %s" 2>/dev/null || echo "")
+          fi
+          
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="- Initial release"
+          fi
+          
+          # Escape for GitHub Actions output
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update release body
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## 📝 Change Log
+            ${{ steps.changelog.outputs.changelog }}
+
+            ## 📥 Downloads
+            ### Windows
+            - **Windows x64**: Installer (.exe)
+            - **Windows ARM64**: Installer (.exe)
+            
+            ### Linux
+            - **Linux x64**: DEB package (.deb), RPM package (.rpm)
+            - **Linux ARM64**: DEB package (.deb), RPM package (.rpm)
+
+            ---
+            *Auto built with GitHub Actions*
