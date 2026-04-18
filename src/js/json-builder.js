@@ -1,5 +1,9 @@
 // ===== JSON 构建、同步、复制 =====
 
+// DOM 引用
+const jsonInput = document.getElementById('json-input');
+const jsonHighlight = document.getElementById('json-highlight');
+
 // 核心：JSON 解析
 function buildJSON(node) {
     let container = node.type === 'array' ? [] : {};
@@ -23,7 +27,8 @@ function buildJSON(node) {
     return container;
 }
 
-// 彩虹括号颜色类
+// ===== 彩虹括号高亮 =====
+
 const bracketColors = [
     'bracket-level-0', 'bracket-level-1', 'bracket-level-2',
     'bracket-level-3', 'bracket-level-4', 'bracket-level-5',
@@ -31,7 +36,12 @@ const bracketColors = [
     'bracket-level-9'
 ];
 
-// 给JSON文本添加彩虹括号和语法高亮
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function highlightJSON(jsonText) {
     let result = '';
     let bracketStack = [];
@@ -39,18 +49,15 @@ function highlightJSON(jsonText) {
 
     for (let i = 0; i < jsonText.length; i++) {
         const char = jsonText[i];
-        const nextChar = jsonText[i + 1] || '';
 
         // 处理字符串
-        if (char === '"' || char === "'") {
-            const quote = char;
-            let strEnd = jsonText.indexOf(quote, i + 1);
+        if (char === '"') {
+            let strEnd = jsonText.indexOf('"', i + 1);
             if (strEnd === -1) strEnd = jsonText.length;
             const str = jsonText.substring(i, strEnd + 1);
 
-            // 判断是否是键
             const beforeStr = jsonText.substring(0, i);
-            const isKey = /:\s*$/.test(beforeStr.replace(/\/\*[\s\S]*?\*\//g, ''));
+            const isKey = /:\s*$/.test(beforeStr);
 
             if (isKey) {
                 result += `<span class="json-key">${escapeHtml(str)}</span>`;
@@ -117,7 +124,7 @@ function highlightJSON(jsonText) {
 
         // 处理冒号和逗号
         if (char === ':' || char === ',') {
-            result += `<span style="color: #999;">${escapeHtml(char)}</span>`;
+            result += `<span class="json-punctuation">${escapeHtml(char)}</span>`;
             continue;
         }
 
@@ -128,87 +135,138 @@ function highlightJSON(jsonText) {
     return result;
 }
 
-// HTML转义
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function updateHighlight() {
+    jsonHighlight.innerHTML = highlightJSON(jsonInput.value);
 }
 
-// 验证JSON格式
-function validateJSON(jsonText) {
-    try {
-        JSON.parse(jsonText);
-        return { valid: true, error: null, line: null, column: null };
-    } catch (e) {
-        // 解析错误消息来获取行号和列号
-        const errorMsg = e.message;
-        let line = null;
-        let column = null;
-        
-        // 尝试从错误消息中提取行号和列号
-        const lineMatch = errorMsg.match(/position\s+(\d+)/) || errorMsg.match(/line\s+(\d+)/);
-        if (lineMatch) {
-            const position = parseInt(lineMatch[1]);
-            const textUpToPosition = jsonText.substring(0, position);
-            const lines = textUpToPosition.split('\n');
-            line = lines.length;
-            column = lines[lines.length - 1].length + 1;
-        }
-        
-        const detailedError = line 
-            ? `JSON语法错误\n位置: 第${line}行, 第${column}列\n${errorMsg}`
-            : `JSON语法错误\n${errorMsg}`;
-            
-        return { valid: false, error: detailedError, line, column };
-    }
+// ===== JSON 反向转换 =====
+
+let nodeIdCounter = 1;
+function generateNodeId() {
+    return 'n' + (nodeIdCounter++);
 }
 
-// 同步 JSON 预览
-function syncJSON() {
-    const finalData = buildJSON(treeData);
-    const jsonText = JSON.stringify(finalData, null, 4);
+const NODE_HORIZONTAL_GAP = 300;
+const NODE_VERTICAL_GAP = 30;
+
+function parseJSONToTree(jsonData, name = 'root', x = 50, y = 50, depth = 0) {
+    const id = generateNodeId();
     
-    // 验证JSON格式
-    const validation = validateJSON(jsonText);
-    
-    // 添加彩虹括号和语法高亮
-    const highlightedJson = highlightJSON(jsonText);
-    
-    if (!validation.valid) {
-        // 如果JSON格式错误，给整个JSON添加错误标注
-        jsonPreview.innerHTML = highlightedJson;
+    if (Array.isArray(jsonData)) {
+        const node = { id, name, type: 'array', x, y, fields: [], children: [] };
+        let currentY = y;
+        const childX = x + NODE_HORIZONTAL_GAP;
         
-        // 添加错误指示器和背景
-        const errorIndicator = document.createElement('div');
-        errorIndicator.className = 'json-error';
-        errorIndicator.setAttribute('data-error', validation.error);
-        errorIndicator.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 10;';
-        errorIndicator.innerHTML = '<span class="json-error-indicator" style="pointer-events: auto;">⚠️ JSON格式错误</span>';
+        jsonData.forEach((item, index) => {
+            if (typeof item === 'object' && item !== null) {
+                const child = parseJSONToTree(item, `[${index}]`, childX, currentY, depth + 1);
+                node.children.push(child);
+                currentY = child.y + getNodeHeight(child) + NODE_VERTICAL_GAP;
+            } else {
+                node.fields.push({ id: generateNodeId(), key: String(index), value: String(item) });
+            }
+        });
+        return node;
+    } else if (typeof jsonData === 'object' && jsonData !== null) {
+        const node = { id, name, type: 'object', x, y, fields: [], children: [] };
+        let currentY = y;
+        const childX = x + NODE_HORIZONTAL_GAP;
         
-        jsonPreview.parentElement.style.position = 'relative';
-        jsonPreview.parentElement.appendChild(errorIndicator);
+        Object.entries(jsonData).forEach(([key, value]) => {
+            if (typeof value === 'object' && value !== null) {
+                const child = parseJSONToTree(value, key, childX, currentY, depth + 1);
+                node.children.push(child);
+                currentY = child.y + getNodeHeight(child) + NODE_VERTICAL_GAP;
+            } else {
+                node.fields.push({ id: generateNodeId(), key, value: value === null ? 'null' : String(value) });
+            }
+        });
+        return node;
     } else {
-        jsonPreview.innerHTML = highlightedJson;
-        
-        // 移除之前的错误指示器
-        const existingError = jsonPreview.parentElement.querySelector('.json-error');
-        if (existingError) {
-            existingError.remove();
-        }
+        return { id, name, type: 'value', x, y, fields: [{ id: generateNodeId(), key: '', value: String(jsonData) }], children: [] };
     }
+}
 
-    // 生成行号
+function importJSONFromText(jsonText) {
+    try {
+        const data = JSON.parse(jsonText);
+        nodeIdCounter = 1;
+        const newTree = parseJSONToTree(data);
+        
+        treeData.id = newTree.id;
+        treeData.name = newTree.name;
+        treeData.type = newTree.type;
+        treeData.fields = newTree.fields;
+        treeData.children = newTree.children;
+        
+        panX = 0;
+        panY = 0;
+        currentZoom = 1;
+        updateZoomStyles();
+        
+        render();
+        resizeCanvas();
+        applyTransform();
+        
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: e.message };
+    }
+}
+
+// ===== 格式化 JSON =====
+
+window.formatJSON = () => {
+    const jsonText = jsonInput.value;
+    try {
+        const parsed = JSON.parse(jsonText);
+        const formatted = JSON.stringify(parsed, null, 4);
+        jsonInput.value = formatted;
+        updateHighlight();
+        updateLineNumbers();
+        showStatusBar('格式化成功', 'success');
+    } catch (e) {
+        showStatusBar('格式化失败: ' + e.message, 'error');
+    }
+};
+
+// ===== 状态提示条 =====
+
+function showStatusBar(message, type = 'info') {
+    const errorBar = document.getElementById('json-error-bar');
+    errorBar.textContent = message;
+    errorBar.className = 'json-error-bar show ' + type;
+    
+    setTimeout(() => {
+        errorBar.classList.remove('show');
+    }, 3000);
+}
+
+// ===== 行号更新 =====
+
+function updateLineNumbers() {
+    const jsonText = jsonInput.value;
     const lines = jsonText.split('\n');
     lineNumbers.innerHTML = lines.map((_, i) => i + 1).join('<br>');
-
-    // 自适应行号宽度
+    
     const maxLineNumber = lines.length;
     const digitWidth = 9;
     const paddingWidth = 20;
     const lineNumberWidth = (maxLineNumber.toString().length * digitWidth) + paddingWidth;
     lineNumbers.style.width = lineNumberWidth + 'px';
-    lineNumbers.style.minWidth = 'auto';
+}
+
+// 同步 JSON 源码
+function syncJSON() {
+    const finalData = buildJSON(treeData);
+    const jsonText = JSON.stringify(finalData, null, 4);
+    
+    jsonInput.value = jsonText;
+    updateHighlight();
+    updateLineNumbers();
+
+    const errorBar = document.getElementById('json-error-bar');
+    errorBar.className = 'json-error-bar';
 }
 
 // 复制 JSON 功能
@@ -231,7 +289,71 @@ window.copyJSON = () => {
     });
 };
 
-// 同步 JSON 源码区和行号的滚动
-jsonPreview.addEventListener('scroll', () => {
-    lineNumbers.scrollTop = jsonPreview.scrollTop;
+// ===== 事件绑定 =====
+
+// 同步滚动
+jsonInput.addEventListener('scroll', () => {
+    jsonHighlight.scrollTop = jsonInput.scrollTop;
+    jsonHighlight.scrollLeft = jsonInput.scrollLeft;
+    lineNumbers.scrollTop = jsonInput.scrollTop;
 });
+
+jsonHighlight.addEventListener('scroll', () => {
+    jsonInput.scrollTop = jsonHighlight.scrollTop;
+    jsonInput.scrollLeft = jsonHighlight.scrollLeft;
+    lineNumbers.scrollTop = jsonHighlight.scrollTop;
+});
+
+// 实时验证和自动更新
+let isUpdatingFromCanvas = false;
+
+jsonInput.addEventListener('input', () => {
+    if (isUpdatingFromCanvas) return;
+    
+    updateHighlight();
+    updateLineNumbers();
+    
+    const jsonText = jsonInput.value;
+    const errorBar = document.getElementById('json-error-bar');
+    
+    if (!jsonText.trim()) {
+        errorBar.className = 'json-error-bar';
+        return;
+    }
+    
+    try {
+        JSON.parse(jsonText);
+        errorBar.textContent = '✓ JSON 格式正确，已生成预览';
+        errorBar.className = 'json-error-bar show success';
+        importJSONFromText(jsonText);
+    } catch (e) {
+        errorBar.textContent = '✗ JSON 格式错误: ' + e.message;
+        errorBar.className = 'json-error-bar show';
+    }
+});
+
+// Tab 键支持
+jsonInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = jsonInput.selectionStart;
+        const end = jsonInput.selectionEnd;
+        jsonInput.value = jsonInput.value.substring(0, start) + '    ' + jsonInput.value.substring(end);
+        jsonInput.selectionStart = jsonInput.selectionEnd = start + 4;
+        updateHighlight();
+        updateLineNumbers();
+    }
+});
+
+// 保持 textarea 和 highlight 层同步
+jsonInput.addEventListener('focus', () => {
+    jsonHighlight.classList.add('active');
+});
+
+jsonInput.addEventListener('blur', () => {
+    jsonHighlight.classList.remove('active');
+});
+
+// 初始化
+updateHighlight();
+updateLineNumbers();

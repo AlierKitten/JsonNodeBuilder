@@ -22,12 +22,19 @@
         <div id="sidebar">
             <div class="sidebar-header">
                 <span>JSON 源码</span>
-                <button class="btn-copy" id="copy-btn" onclick="copyJSON()">复制</button>
+                <div class="sidebar-actions">
+                    <button class="btn-format" id="format-btn" onclick="formatJSON()">格式化</button>
+                    <button class="btn-copy" id="copy-btn" onclick="copyJSON()">复制</button>
+                </div>
             </div>
             <div id="json-container">
                 <div id="line-numbers"></div>
-                <pre id="json-preview"></pre>
+                <div id="json-editor">
+                    <div id="json-highlight"></div>
+                    <textarea id="json-input" spellcheck="false" placeholder="输入JSON源码..."></textarea>
+                </div>
             </div>
+            <div id="json-error-bar" class="json-error-bar"></div>
         </div>
     </div>
     <div id="zoom-info">Ctrl+滚轮: 缩放 | 拖动: 移动画布</div>
