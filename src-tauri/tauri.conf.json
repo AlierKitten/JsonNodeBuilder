@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "jsonnodebuilder",
-  "version": "0.1.0",
-  "identifier": "com.shiin.jsonnodebuilder",
+  "productName": "JsonNodeBuilder",
+  "version": "1.0.0",
+  "identifier": "com.alierkitten.jsonnodebuilder",
   "build": {
     "frontendDist": "../src"
   },
@@ -10,11 +10,11 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "jsonnodebuilder",
-        "width": 1440,
-        "height": 810,
-        "minWidth": 1200,
-        "minHeight": 675,
+        "title": "JsonNodeBuilder",
+        "width": 1280,
+        "height": 720,
+        "minWidth": 853,
+        "minHeight": 480,
         "resizable": true
       }
     ],

@@ -1,8 +1,8 @@
 [package]
-name = "jsonnodebuilder"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "JsonNodeBuilder"
+version = "1.0.0"
+description = "A JSON structure generator"
+authors = ["AlierKitten"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
