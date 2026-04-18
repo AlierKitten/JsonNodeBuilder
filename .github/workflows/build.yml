@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-windows-x64:
-    name: Build Windows x64
+    name: Windows x64
     runs-on: windows-latest
 
     steps:
@@ -30,29 +30,27 @@ jobs:
         retention-days: 7
 
   build-windows-arm64:
-    name: Build Windows ARM64
-    runs-on: windows-latest
+    name: Windows ARM64
+    runs-on: windows-11-arm
 
     steps:
     - uses: actions/checkout@v4
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
-      with:
-        targets: aarch64-pc-windows-msvc
     - name: Install Tauri CLI
       run: cargo install tauri-cli
     - name: Build NSIS installer for ARM64
-      run: cargo tauri build --verbose --target aarch64-pc-windows-msvc
+      run: cargo tauri build --verbose
       working-directory: src-tauri
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: windows-arm64-nsis
-        path: src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis/**
+        path: src-tauri/target/release/bundle/nsis/**
         retention-days: 7
 
   build-linux-x64:
-    name: Build Linux x64 (DEB + RPM)
+    name: Linux x64 (DEB + RPM)
     runs-on: ubuntu-latest
 
     steps:
@@ -86,19 +84,22 @@ jobs:
         retention-days: 7
 
   build-linux-arm64:
-    name: Build Linux ARM64 (DEB + RPM)
-    runs-on: ubuntu-latest
+    name: Linux ARM64 (DEB + RPM)
+    runs-on: ubuntu-24.04-arm
 
     steps:
     - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf gcc-aarch64-linux-gnu g++-aarch64-linux-gnu rpm
+        sudo apt-get install -y \
+          libwebkit2gtk-4.1-dev \
+          libappindicator3-dev \
+          librsvg2-dev \
+          patchelf \
+          rpm
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
-      with:
-        targets: aarch64-unknown-linux-gnu
     - name: Install Node.js
       uses: actions/setup-node@v4
       with:
@@ -106,20 +107,17 @@ jobs:
     - name: Install Tauri CLI
       run: cargo install tauri-cli
     - name: Build DEB and RPM packages for ARM64
-      run: |
-        export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
-        export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
-        cargo tauri build --verbose --target aarch64-unknown-linux-gnu --bundles deb,rpm
+      run: cargo tauri build --verbose --bundles deb,rpm
       working-directory: src-tauri
     - name: Upload DEB artifacts
       uses: actions/upload-artifact@v4
       with:
         name: linux-arm64-deb
-        path: src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/**
+        path: src-tauri/target/release/bundle/deb/**
         retention-days: 7
     - name: Upload RPM artifacts
       uses: actions/upload-artifact@v4
       with:
         name: linux-arm64-rpm
-        path: src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/**
+        path: src-tauri/target/release/bundle/rpm/**
         retention-days: 7
