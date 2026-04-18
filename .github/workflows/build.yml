@@ -85,8 +85,8 @@ jobs:
       with:
         tag_name: ${{ github.ref_name }}
         files: |
-          src-tauri/target/release/bundle/deb/**
-          src-tauri/target/release/bundle/rpm/**
+          src-tauri/target/release/bundle/deb/*.deb
+          src-tauri/target/release/bundle/rpm/*.rpm
 
   build-linux-arm64:
     name: Linux ARM64 (DEB + RPM)
@@ -123,8 +123,8 @@ jobs:
       with:
         tag_name: ${{ github.ref_name }}
         files: |
-          src-tauri/target/release/bundle/deb/**
-          src-tauri/target/release/bundle/rpm/**
+          src-tauri/target/release/bundle/deb/*.deb
+          src-tauri/target/release/bundle/rpm/*.rpm
 
   update-release-body:
     name: Update Release Body
