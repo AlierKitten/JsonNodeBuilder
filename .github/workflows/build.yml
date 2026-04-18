@@ -113,10 +113,10 @@ jobs:
         VERSION="${{ github.ref_name }}"
         # Rename DEB package
         DEB_FILE=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
-        mv "$DEB_FILE" "src-tauri/target/release/bundle/deb/jsonnodebuilder-${VERSION}-linux_x64.deb"
+        mv "$DEB_FILE" "src-tauri/target/release/bundle/deb/JsonNodeBuilder-${VERSION}-linux_x64.deb"
         # Rename RPM package
         RPM_FILE=$(ls src-tauri/target/release/bundle/rpm/*.rpm | head -1)
-        mv "$RPM_FILE" "src-tauri/target/release/bundle/rpm/jsonnodebuilder-${VERSION}-linux_x64.rpm"
+        mv "$RPM_FILE" "src-tauri/target/release/bundle/rpm/JsonNodeBuilder-${VERSION}-linux_x64.rpm"
     - name: Upload to Release
       uses: softprops/action-gh-release@v2
       env:
@@ -160,10 +160,10 @@ jobs:
         VERSION="${{ github.ref_name }}"
         # Rename DEB package
         DEB_FILE=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
-        mv "$DEB_FILE" "src-tauri/target/release/bundle/deb/jsonnodebuilder-${VERSION}-linux_arm64.deb"
+        mv "$DEB_FILE" "src-tauri/target/release/bundle/deb/JsonNodeBuilder-${VERSION}-linux_arm64.deb"
         # Rename RPM package
         RPM_FILE=$(ls src-tauri/target/release/bundle/rpm/*.rpm | head -1)
-        mv "$RPM_FILE" "src-tauri/target/release/bundle/rpm/jsonnodebuilder-${VERSION}-linux_arm64.rpm"
+        mv "$RPM_FILE" "src-tauri/target/release/bundle/rpm/JsonNodeBuilder-${VERSION}-linux_arm64.rpm"
     - name: Upload to Release
       uses: softprops/action-gh-release@v2
       env:
@@ -243,12 +243,12 @@ jobs:
             ## 📥 Downloads
 
             ### Windows
-            - **Windows x64**: [Installer (.exe)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/jsonnodebuilder-${{ github.ref_name }}-windows-setup_x64.exe)
-            - **Windows ARM64**: [Installer (.exe)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/jsonnodebuilder-${{ github.ref_name }}-windows-setup_arm64.exe)
+            - **Windows x64**: [Installer (.exe)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JsonNodeBuilder-${{ github.ref_name }}-windows-setup_x64.exe), [Portable (.zip)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JsonNodeBuilder-${{ github.ref_name }}-windows-Portable_x64.zip)
+            - **Windows ARM64**: [Installer (.exe)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JsonNodeBuilder-${{ github.ref_name }}-windows-setup_arm64.exe), [Portable (.zip)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JsonNodeBuilder-${{ github.ref_name }}-windows-Portable_arm64.zip)
             
             ### Linux
-            - **Linux x64**: [DEB package (.deb)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/jsonnodebuilder-${{ github.ref_name }}-linux_x64.deb), [RPM package (.rpm)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/jsonnodebuilder-${{ github.ref_name }}-linux_x64.rpm)
-            - **Linux ARM64**: [DEB package (.deb)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/jsonnodebuilder-${{ github.ref_name }}-linux_arm64.deb), [RPM package (.rpm)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/jsonnodebuilder-${{ github.ref_name }}-linux_arm64.rpm)
+            - **Linux x64**: [DEB package (.deb)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JsonNodeBuilder-${{ github.ref_name }}-linux_x64.deb), [RPM package (.rpm)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JsonNodeBuilder-${{ github.ref_name }}-linux_x64.rpm)
+            - **Linux ARM64**: [DEB package (.deb)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JsonNodeBuilder-${{ github.ref_name }}-linux_arm64.deb), [RPM package (.rpm)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JsonNodeBuilder-${{ github.ref_name }}-linux_arm64.rpm)
 
             ---
             *Auto built with GitHub Actions*
