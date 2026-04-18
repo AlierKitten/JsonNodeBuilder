@@ -28,3 +28,30 @@ jobs:
         name: windows-build
         path: src-tauri/target/release/bundle/**
         retention-days: 7
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+    - name: Install Tauri CLI
+      run: cargo install tauri-cli
+    - name: Build Debian package
+      run: cargo tauri build --verbose --target deb
+      working-directory: src-tauri
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-deb-build
+        path: src-tauri/target/release/bundle/deb/**
+        retention-days: 7
