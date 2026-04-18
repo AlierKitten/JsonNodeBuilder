@@ -21,20 +21,21 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     - name: Install Tauri CLI
       run: cargo install tauri-cli
-    - name: Build NSIS installer and Portable zip
-      run: cargo tauri build --verbose --bundles nsis,zip
+    - name: Build NSIS installer
+      run: cargo tauri build --verbose --bundles nsis
       working-directory: src-tauri
+    - name: Create Portable zip
+      run: |
+        $version = "${{ github.ref_name }}"
+        $exePath = "src-tauri/target/release/JsonNodeBuilder.exe"
+        $zipName = "JsonNodeBuilder-${version}-windows-Portable_x64.zip"
+        $zipPath = "src-tauri/target/release/bundle/${zipName}"
+        Compress-Archive -Path $exePath -DestinationPath $zipPath
     - name: Rename installer
       run: |
         $file = Get-ChildItem -Path "src-tauri/target/release/bundle/nsis" -Filter "*.exe" | Select-Object -First 1
         $version = "${{ github.ref_name }}"
         $newName = "JsonNodeBuilder-${version}-windows-setup_x64.exe"
-        Rename-Item -Path $file.FullName -NewName $newName
-    - name: Rename portable zip
-      run: |
-        $file = Get-ChildItem -Path "src-tauri/target/release/bundle" -Filter "*.zip" | Select-Object -First 1
-        $version = "${{ github.ref_name }}"
-        $newName = "JsonNodeBuilder-${version}-windows-Portable_x64.zip"
         Rename-Item -Path $file.FullName -NewName $newName
     - name: Upload to Release
       uses: softprops/action-gh-release@v2
@@ -58,20 +59,21 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     - name: Install Tauri CLI
       run: cargo install tauri-cli
-    - name: Build NSIS installer and Portable zip for ARM64
-      run: cargo tauri build --verbose --bundles nsis,zip
+    - name: Build NSIS installer for ARM64
+      run: cargo tauri build --verbose --bundles nsis
       working-directory: src-tauri
+    - name: Create Portable zip
+      run: |
+        $version = "${{ github.ref_name }}"
+        $exePath = "src-tauri/target/release/JsonNodeBuilder.exe"
+        $zipName = "JsonNodeBuilder-${version}-windows-Portable_arm64.zip"
+        $zipPath = "src-tauri/target/release/bundle/${zipName}"
+        Compress-Archive -Path $exePath -DestinationPath $zipPath
     - name: Rename installer
       run: |
         $file = Get-ChildItem -Path "src-tauri/target/release/bundle/nsis" -Filter "*.exe" | Select-Object -First 1
         $version = "${{ github.ref_name }}"
         $newName = "JsonNodeBuilder-${version}-windows-setup_arm64.exe"
-        Rename-Item -Path $file.FullName -NewName $newName
-    - name: Rename portable zip
-      run: |
-        $file = Get-ChildItem -Path "src-tauri/target/release/bundle" -Filter "*.zip" | Select-Object -First 1
-        $version = "${{ github.ref_name }}"
-        $newName = "JsonNodeBuilder-${version}-windows-Portable_arm64.zip"
         Rename-Item -Path $file.FullName -NewName $newName
     - name: Upload to Release
       uses: softprops/action-gh-release@v2
