@@ -1,16 +1,6 @@
 // ===== 全局状态与数据 =====
 
-// 树形数据
-const treeData = {
-    id: "root",
-    name: "JSON Object",
-    type: "object",
-    x: 50, y: 50,
-    fields: [
-        { id: "f1", key: "id", value: "1" },
-    ],
-    children: []
-};
+// treeData 现在由标签页管理，通过 getActiveTab().treeData 访问
 
 // DOM 引用
 const nodesLayer = document.getElementById('nodes-layer');
@@ -21,13 +11,13 @@ const canvasContainer = document.getElementById('canvas-container');
 const canvasContent = document.getElementById('canvas-content');
 const sidebar = document.getElementById('sidebar');
 
-// 拖动相关变量
-let isDragging = false;
-let startX, startY;
-let panX = 0, panY = 0;
+// 拖动相关变量（全局，切换标签时恢复/保存）
+var isDragging = false;
+var startX, startY;
+var panX = 0, panY = 0;
 
-// 缩放相关变量
-let currentZoom = 1;
+// 缩放相关变量（全局，切换标签时恢复/保存）
+var currentZoom = 1;
 const minZoom = 0.5;
 const maxZoom = 3;
 const zoomStep = 0.1;

@@ -9,29 +9,39 @@
     <link rel="stylesheet" href="css/canvas.css">
     <link rel="stylesheet" href="css/node.css">
     <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/tab.css">
 </head>
 
 <body>
     <div id="app">
-        <div id="canvas-container">
-            <div id="canvas-content">
-                <svg id="lines-svg"></svg>
-                <div id="nodes-layer"></div>
-            </div>
+        <!-- 标签栏 -->
+        <div id="tab-bar">
+            <div id="tab-list"></div>
+            <button id="tab-add-btn">+</button>
         </div>
-        <div id="sidebar">
-            <div class="sidebar-header">
-                <span>JSON 源码</span>
-                <button class="btn-copy" id="copy-btn" onclick="copyJSON()">复制</button>
+        <!-- 工作区 -->
+        <div id="workspace">
+            <div id="canvas-container">
+                <div id="canvas-content">
+                    <svg id="lines-svg"></svg>
+                    <div id="nodes-layer"></div>
+                </div>
             </div>
-            <div id="json-container">
-                <div id="line-numbers"></div>
-                <pre id="json-preview"></pre>
+            <div id="sidebar">
+                <div class="sidebar-header">
+                    <span>JSON 源码</span>
+                    <button class="btn-copy" id="copy-btn" onclick="copyJSON()">复制</button>
+                </div>
+                <div id="json-container">
+                    <div id="line-numbers"></div>
+                    <pre id="json-preview"></pre>
+                </div>
             </div>
         </div>
     </div>
     <div id="zoom-info">Ctrl+滚轮: 缩放 | 拖动: 移动画布</div>
     <script src="js/state.js"></script>
+    <script src="js/tab.js"></script>
     <script src="js/canvas.js"></script>
     <script src="js/node-render.js"></script>
     <script src="js/json-builder.js"></script>

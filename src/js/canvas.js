@@ -41,8 +41,9 @@ function updateZoomInfo() {
 // 动态调整画布大小
 function resizeCanvas() {
     const container = canvasContainer;
-    const maxRight = Math.max(...getAllNodes().map(n => (n.x + 260) * currentZoom));
-    const maxBottom = Math.max(...getAllNodes().map(n => (n.y + getNodeHeight(n)) * currentZoom));
+    const tab = getActiveTab();
+    const maxRight = Math.max(...getAllNodes(tab.treeData).map(n => (n.x + 260) * currentZoom));
+    const maxBottom = Math.max(...getAllNodes(tab.treeData).map(n => (n.y + getNodeHeight(n)) * currentZoom));
 
     const neededWidth = Math.max(container.clientWidth, maxRight + 100);
     const neededHeight = Math.max(container.clientHeight, maxBottom + 100);
@@ -112,6 +113,9 @@ canvasContainer.addEventListener('wheel', (e) => {
         const newZoom = Math.min(Math.max(currentZoom + delta, minZoom), maxZoom);
         if (newZoom !== currentZoom) {
             currentZoom = newZoom;
+            // 同步到当前标签
+            const tab = getActiveTab();
+            if (tab) tab.currentZoom = currentZoom;
             updateZoomStyles();
             render();
             resizeCanvas();

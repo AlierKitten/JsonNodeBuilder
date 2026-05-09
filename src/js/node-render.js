@@ -23,8 +23,9 @@ function findParent(root, childId) {
     return null;
 }
 
-// 获取所有节点
-function getAllNodes(node = treeData) {
+// 获取所有节点（接受 treeData 参数）
+function getAllNodes(node) {
+    node = node || getActiveTab().treeData;
     let nodes = [node];
     node.children.forEach(child => {
         nodes = nodes.concat(getAllNodes(child));
@@ -130,51 +131,61 @@ function renderNode(node, parentId) {
 
 // 渲染入口
 function render() {
+    const tab = getActiveTab();
     nodesLayer.innerHTML = '';
     svgLayer.innerHTML = '';
-    renderNode(treeData, null);
+    renderNode(tab.treeData, null);
     syncJSON();
     resizeCanvas();
 }
 
 // 增删改操作（通过 window 暴露给 HTML onclick）
-window.updateNodeName = (id, val) => { const n = findNode(treeData, id); if (n) n.name = val; syncJSON(); };
+window.updateNodeName = (id, val) => {
+    const tab = getActiveTab();
+    const n = findNode(tab.treeData, id);
+    if (n) n.name = val;
+    syncJSON();
+};
 window.updateField = (id, fId, type, val) => {
-    const n = findNode(treeData, id);
+    const tab = getActiveTab();
+    const n = findNode(tab.treeData, id);
     const f = n.fields.find(item => item.id === fId);
     if (f) f[type] = val;
     syncJSON();
 };
 window.addField = (id) => {
-    const n = findNode(treeData, id);
+    const tab = getActiveTab();
+    const n = findNode(tab.treeData, id);
     n.fields.push({ id: Date.now().toString(), key: "key", value: "val" });
     // 添加字段后重新布局子节点
     if (n.children.length > 0) {
         relayoutChildren(n);
     }
     // 重新布局当前节点的兄弟节点（找到父节点并重新布局）
-    const parent = findParent(treeData, id);
+    const parent = findParent(tab.treeData, id);
     if (parent) {
         relayoutChildren(parent);
     }
     render();
 };
 window.deleteField = (nId, fId) => {
-    const n = findNode(treeData, nId);
+    const tab = getActiveTab();
+    const n = findNode(tab.treeData, nId);
     n.fields = n.fields.filter(f => f.id !== fId);
     // 删除字段后重新布局子节点
     if (n.children.length > 0) {
         relayoutChildren(n);
     }
     // 重新布局当前节点的兄弟节点（找到父节点并重新布局）
-    const parent = findParent(treeData, nId);
+    const parent = findParent(tab.treeData, nId);
     if (parent) {
         relayoutChildren(parent);
     }
     render();
 };
 window.addChild = (id, type) => {
-    const p = findNode(treeData, id);
+    const tab = getActiveTab();
+    const p = findNode(tab.treeData, id);
     const newNode = {
         id: "n" + Date.now(),
         name: type,
@@ -189,7 +200,8 @@ window.addChild = (id, type) => {
     render();
 };
 window.deleteNode = (pId, cId) => {
-    const p = findNode(treeData, pId);
+    const tab = getActiveTab();
+    const p = findNode(tab.treeData, pId);
     p.children = p.children.filter(c => c.id !== cId);
     // 删除节点后重新布局子节点
     relayoutChildren(p);

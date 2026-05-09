@@ -166,7 +166,8 @@ function validateJSON(jsonText) {
 
 // 同步 JSON 预览
 function syncJSON() {
-    const finalData = buildJSON(treeData);
+    const tab = getActiveTab();
+    const finalData = buildJSON(tab.treeData);
     const jsonText = JSON.stringify(finalData, null, 4);
     
     // 验证JSON格式
@@ -213,7 +214,8 @@ function syncJSON() {
 
 // 复制 JSON 功能
 window.copyJSON = () => {
-    const finalData = buildJSON(treeData);
+    const tab = getActiveTab();
+    const finalData = buildJSON(tab.treeData);
     const jsonText = JSON.stringify(finalData, null, 4);
     
     navigator.clipboard.writeText(jsonText).then(() => {
