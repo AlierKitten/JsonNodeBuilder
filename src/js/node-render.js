@@ -156,7 +156,9 @@ window.updateField = (id, fId, type, val) => {
 window.addField = (id) => {
     const tab = getActiveTab();
     const n = findNode(tab.treeData, id);
-    n.fields.push({ id: Date.now().toString(), key: "key", value: "val" });
+    // 使用基于父节点计数的唯一key名称
+    const newKeyName = generateFieldName(n, 'key');
+    n.fields.push({ id: Date.now().toString(), key: newKeyName, value: "val" });
     // 添加字段后重新布局子节点
     if (n.children.length > 0) {
         relayoutChildren(n);
@@ -186,15 +188,22 @@ window.deleteField = (nId, fId) => {
 window.addChild = (id, type) => {
     const tab = getActiveTab();
     const p = findNode(tab.treeData, id);
+    // 使用基于父节点计数的名称
+    const newNodeName = generateFieldName(p, type);
     const newNode = {
         id: "n" + Date.now(),
-        name: type,
+        name: newNodeName,
         type: type,
         x: p.x + 300,
         y: p.y,
-        fields: [{ id: "f" + Date.now(), key: "key", value: "val" }],
-        children: []
+        fields: [],
+        children: [],
+        childNameCounters: { key: 0, object: 0, array: 0 }  // 初始化新节点的计数器
     };
+    // 添加默认字段，使用新节点自己的计数器
+    const defaultKeyName = generateFieldName(newNode, 'key');
+    newNode.fields.push({ id: "f" + Date.now(), key: defaultKeyName, value: "val" });
+    
     p.children.push(newNode);
     relayoutChildren(p);
     render();

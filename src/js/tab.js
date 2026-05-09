@@ -13,9 +13,10 @@ function createDefaultTreeData() {
         type: "object",
         x: 50, y: 50,
         fields: [
-            { id: "f1", key: "id", value: "1" },
+            { id: "f1", key: "key1", value: "val" },
         ],
-        children: []
+        children: [],
+        childNameCounters: { key: 1, object: 0, array: 0 }  // 子节点名称计数器，key已使用1个
     };
 }
 
@@ -35,6 +36,52 @@ class TabState {
 // 获取当前活跃标签
 function getActiveTab() {
     return tabs[activeTabIndex];
+}
+
+// ===== 名称生成辅助函数 =====
+
+// 生成字段名称（基于父节点计数，扫描现有节点确保连续性）
+function generateFieldName(parentNode, type) {
+    if (!parentNode.childNameCounters) {
+        parentNode.childNameCounters = { key: 0, object: 0, array: 0 };
+    }
+    
+    let maxNum = 0;
+    
+    if (type === 'key') {
+        // 扫描所有fields，找到key后面的最大数字
+        if (parentNode.fields) {
+            parentNode.fields.forEach(f => {
+                const match = f.key.match(/^key(\d+)$/);
+                if (match) {
+                    const num = parseInt(match[1]);
+                    if (num > maxNum) maxNum = num;
+                }
+            });
+        }
+    } else if (type === 'object' || type === 'array') {
+        // 扫描所有children，找到对应类型的最大数字
+        if (parentNode.children) {
+            parentNode.children.forEach(child => {
+                if (child.type === type) {
+                    const match = child.name.match(new RegExp('^' + type + '(\\d+)$'));
+                    if (match) {
+                        const num = parseInt(match[1]);
+                        if (num > maxNum) maxNum = num;
+                    }
+                }
+            });
+        }
+    }
+    
+    const newNum = maxNum + 1;
+    
+    // 更新计数器（用于导入JSON时的初始值）
+    if (newNum > parentNode.childNameCounters[type]) {
+        parentNode.childNameCounters[type] = newNum;
+    }
+    
+    return type + newNum;
 }
 
 // 渲染标签栏

@@ -153,7 +153,7 @@ function parseJSONToTree(jsonData, name = 'root', x = 50, y = 50, depth = 0) {
     const id = generateNodeId();
     
     if (Array.isArray(jsonData)) {
-        const node = { id, name, type: 'array', x, y, fields: [], children: [] };
+        const node = { id, name, type: 'array', x, y, fields: [], children: [], childNameCounters: { key: 0, object: 0, array: 0 } };
         let currentY = y;
         const childX = x + NODE_HORIZONTAL_GAP;
         
@@ -161,14 +161,21 @@ function parseJSONToTree(jsonData, name = 'root', x = 50, y = 50, depth = 0) {
             if (typeof item === 'object' && item !== null) {
                 const child = parseJSONToTree(item, `[${index}]`, childX, currentY, depth + 1);
                 node.children.push(child);
+                // 统计子节点类型，更新计数器
+                if (child.type === 'object') {
+                    node.childNameCounters.object++;
+                } else if (child.type === 'array') {
+                    node.childNameCounters.array++;
+                }
                 currentY = child.y + getNodeHeight(child) + NODE_VERTICAL_GAP;
             } else {
                 node.fields.push({ id: generateNodeId(), key: String(index), value: String(item) });
+                node.childNameCounters.key++;
             }
         });
         return node;
     } else if (typeof jsonData === 'object' && jsonData !== null) {
-        const node = { id, name, type: 'object', x, y, fields: [], children: [] };
+        const node = { id, name, type: 'object', x, y, fields: [], children: [], childNameCounters: { key: 0, object: 0, array: 0 } };
         let currentY = y;
         const childX = x + NODE_HORIZONTAL_GAP;
         
@@ -176,14 +183,21 @@ function parseJSONToTree(jsonData, name = 'root', x = 50, y = 50, depth = 0) {
             if (typeof value === 'object' && value !== null) {
                 const child = parseJSONToTree(value, key, childX, currentY, depth + 1);
                 node.children.push(child);
+                // 统计子节点类型，更新计数器
+                if (child.type === 'object') {
+                    node.childNameCounters.object++;
+                } else if (child.type === 'array') {
+                    node.childNameCounters.array++;
+                }
                 currentY = child.y + getNodeHeight(child) + NODE_VERTICAL_GAP;
             } else {
                 node.fields.push({ id: generateNodeId(), key, value: value === null ? 'null' : String(value) });
+                node.childNameCounters.key++;
             }
         });
         return node;
     } else {
-        return { id, name, type: 'value', x, y, fields: [{ id: generateNodeId(), key: '', value: String(jsonData) }], children: [] };
+        return { id, name, type: 'value', x, y, fields: [{ id: generateNodeId(), key: '', value: String(jsonData) }], children: [], childNameCounters: { key: 0, object: 0, array: 0 } };
     }
 }
 
@@ -199,6 +213,7 @@ function importJSONFromText(jsonText) {
         tab.treeData.type = newTree.type;
         tab.treeData.fields = newTree.fields;
         tab.treeData.children = newTree.children;
+        tab.treeData.childNameCounters = newTree.childNameCounters;
         
         panX = 0;
         panY = 0;
