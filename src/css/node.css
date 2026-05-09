@@ -3,7 +3,7 @@
     position: absolute;
     width: var(--node-width);
     background: white;
-    border: 1px solid #bcbcbc;
+    border: calc(1px * var(--zoom-factor)) solid #bcbcbc;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     -webkit-font-smoothing: antialiased;
@@ -15,7 +15,7 @@
     background: #fafafa;
     padding: var(--padding-sm) var(--padding-base);
     padding-right: var(--padding-sm);
-    border-bottom: 1px solid #eee;
+    border-bottom: calc(1px * var(--zoom-factor)) solid #eee;
     border-radius: var(--border-radius) var(--border-radius) 0 0;
     display: flex;
     justify-content: space-between;
@@ -25,26 +25,31 @@
 }
 
 .node-name {
-    border: 1px solid transparent;
+    border: calc(1px * var(--zoom-factor)) solid #ddd;
     font-weight: bold;
     width: var(--input-height-name);
-    background: transparent;
+    background: white;
     user-select: text;
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
     font-size: var(--font-size-base);
+    padding: calc(var(--padding-xs) * 0.5) calc(var(--padding-sm) * 0.5);
+    box-sizing: border-box;
+    height: calc(var(--font-size-base) * 1.8);
+    line-height: 1.4;
+    border-radius: var(--border-radius-sm);
 }
 
 .node-name:focus {
     border-color: var(--primary);
-    background: white;
     outline: none;
+    box-shadow: 0 0 0 calc(2px * var(--zoom-factor)) rgba(74, 144, 226, 0.2);
 }
 
 /* 根节点样式 */
 .node.root-node {
-    border: 2px dashed var(--primary);
+    border: calc(2px * var(--zoom-factor)) dashed var(--primary);
     background: #fdfeff;
 }
 
@@ -64,7 +69,7 @@
     grid-template-columns: var(--input-height-key) auto var(--input-height-val) auto !important;
     align-items: center !important;
     padding: 0 var(--padding-sm) !important;
-    border-bottom: 1px solid #f5f5f5 !important;
+    border-bottom: calc(1px * var(--zoom-factor)) solid #f5f5f5 !important;
     height: var(--field-height) !important;
     box-sizing: border-box !important;
     gap: var(--gap) !important;
@@ -72,6 +77,12 @@
 
 .field-row > .key-input {
     color: #c41d7f !important;
+    font-size: var(--font-size-base) !important;
+    padding: calc(var(--padding-xs) * 0.5) calc(var(--padding-sm) * 0.5) !important;
+    box-sizing: border-box !important;
+    height: calc(var(--font-size-base) * 1.8) !important;
+    line-height: 1.4 !important;
+    border-radius: var(--border-radius-sm) !important;
 }
 
 /* array类型的key值灰色且不可编辑 */
@@ -83,6 +94,12 @@
 
 .field-row > .val-input {
     color: #096dd9 !important;
+    font-size: var(--font-size-base) !important;
+    padding: calc(var(--padding-xs) * 0.5) calc(var(--padding-sm) * 0.5) !important;
+    box-sizing: border-box !important;
+    height: calc(var(--font-size-base) * 1.8) !important;
+    line-height: 1.4 !important;
+    border-radius: var(--border-radius-sm) !important;
 }
 
 .field-row > .btn-del {
@@ -116,7 +133,7 @@
     content: '';
     position: absolute;
     width: calc(var(--font-size-base) * 1.1);
-    height: 2px;
+    height: calc(2px * var(--zoom-factor));
     background-color: var(--danger);
     top: 50%;
     left: 50%;
@@ -153,7 +170,7 @@
 .btn-sm {
     flex: 1;
     cursor: pointer;
-    border: 1px solid #ddd;
+    border: calc(1px * var(--zoom-factor)) solid #ddd;
     background: #fdfdfd;
     font-size: var(--font-size-sm);
     padding: calc(var(--padding-xs) * 1.5);
