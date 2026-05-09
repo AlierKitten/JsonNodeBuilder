@@ -5,7 +5,6 @@
 // DOM 引用
 const nodesLayer = document.getElementById('nodes-layer');
 const svgLayer = document.getElementById('lines-svg');
-const jsonPreview = document.getElementById('json-preview');
 const lineNumbers = document.getElementById('line-numbers');
 const canvasContainer = document.getElementById('canvas-container');
 const canvasContent = document.getElementById('canvas-content');

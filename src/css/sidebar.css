@@ -24,7 +24,12 @@
     align-items: center;
 }
 
-.btn-copy {
+.sidebar-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-copy, .btn-format {
     padding: 6px 12px;
     background: var(--primary);
     color: white;
@@ -35,19 +40,31 @@
     transition: background 0.2s;
 }
 
-.btn-copy:hover {
+.btn-copy:hover, .btn-format:hover {
     background: #357abd;
 }
 
-.btn-copy:active {
+.btn-copy:active, .btn-format:active {
     background: #2968a8;
+}
+
+.btn-format {
+    background: #27ae60;
+}
+
+.btn-format:hover {
+    background: #219a52;
+}
+
+.btn-format:active {
+    background: #1e8449;
 }
 
 #json-container {
     position: relative;
     flex: 1;
     display: flex;
-    overflow: auto;
+    overflow: hidden;
 }
 
 #line-numbers {
@@ -62,23 +79,73 @@
     user-select: none;
     white-space: pre;
     flex-shrink: 0;
+    overflow: hidden;
+    min-width: 40px;
 }
 
-#json-preview {
+#json-editor {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
+#json-highlight, #json-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     padding: 20px;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 13px;
     line-height: 1.6;
-    overflow: auto;
-    flex: 1;
     margin: 0;
-    color: #333;
-    background: #ffffff;
-    user-select: text;
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    white-space: pre;
+    overflow: auto;
 }
+
+#json-highlight {
+    background: #ffffff;
+    color: #333;
+    pointer-events: none;
+    z-index: 1;
+}
+
+#json-input {
+    background: transparent;
+    color: transparent;
+    caret-color: #333;
+    resize: none;
+    z-index: 2;
+}
+
+#json-input::placeholder {
+    color: transparent;
+}
+
+#json-highlight::before {
+    content: attr(data-placeholder);
+    color: #999;
+    display: block;
+    white-space: pre-wrap;
+}
+
+/* 激活时隐藏 placeholder */
+#json-editor.active #json-highlight::before,
+#json-highlight:not(:empty)::before {
+    content: none;
+}
+
+/* JSON 语法高亮 */
+.json-key { color: #0984e3; }
+.json-string { color: #00b894; }
+.json-number { color: #d63031; }
+.json-boolean { color: #6c5ce7; }
+.json-null { color: #636e72; }
+.json-punctuation { color: #999; }
 
 /* 彩虹括号样式 */
 .bracket-level-0 { color: #ff6b6b; }
@@ -92,51 +159,22 @@
 .bracket-level-8 { color: #7bed9f; }
 .bracket-level-9 { color: #70a1ff; }
 
-/* JSON错误下波浪线标注 */
-.json-error {
-    position: relative;
-    cursor: help;
-    background: linear-gradient(to top, rgba(255, 71, 87, 0.05), transparent);
+/* JSON 错误提示条 */
+.json-error-bar {
+    padding: 8px 15px;
+    background: #ffe6e6;
+    color: #c0392b;
+    font-size: 12px;
+    border-top: 1px solid #f5c6cb;
+    display: none;
 }
 
-.json-error:hover::after {
-    content: attr(data-error);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #2f3542;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 13px;
-    white-space: pre-wrap;
-    max-width: 300px;
-    word-wrap: break-word;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    pointer-events: none;
-    line-height: 1.5;
+.json-error-bar.show {
+    display: block;
 }
 
-.json-error-indicator {
-    display: inline-block;
-    text-decoration: underline wavy #ff4757;
-    text-decoration-thickness: 2px;
-    padding: 4px 8px;
-    background: rgba(255, 71, 87, 0.1);
-    border-radius: 4px;
-    cursor: help;
-    position: relative;
-    font-weight: bold;
-    color: #ff4757;
-    font-size: 14px;
-    user-select: none;
+.json-error-bar.success {
+    background: #d4edda;
+    color: #155724;
+    border-top-color: #c3e6cb;
 }
-
-/* JSON 语法高亮 */
-.json-key { color: #0984e3; }
-.json-string { color: #00b894; }
-.json-number { color: #d63031; }
-.json-boolean { color: #6c5ce7; }
-.json-null { color: #636e72; }
