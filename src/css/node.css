@@ -84,12 +84,8 @@
     height: calc(var(--font-size-base) * 1.8) !important;
     line-height: 1.4 !important;
     border-radius: var(--border-radius-sm) !important;
-    /* 自适应宽度 */
-    width: auto !important;
-    min-width: 100px !important;
-    flex: 0 0 auto !important;
-    /* 现代浏览器支持 */
-    field-sizing: content !important;
+    /* 由 JS 统一控制宽度 */
+    min-width: 20px !important;
 }
 
 /* array类型的key值灰色且不可编辑 */
@@ -107,14 +103,8 @@
     height: calc(var(--font-size-base) * 1.8) !important;
     line-height: 1.4 !important;
     border-radius: var(--border-radius-sm) !important;
-    /* 自适应宽度 */
-    width: auto !important;
-    min-width: 100px !important;
-    flex: 0 0 auto !important;
-    /* 最大宽度限制，防止内容过长时占用太多空间 */
-    max-width: 300px !important;
-    /* 现代浏览器支持 */
-    field-sizing: content !important;
+    /* 由 JS 统一控制宽度 */
+    min-width: 20px !important;
 }
 
 .field-row > .btn-del {
