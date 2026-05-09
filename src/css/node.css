@@ -1,7 +1,8 @@
 /* 节点卡片 */
 .node {
     position: absolute;
-    width: var(--node-width);
+    width: auto;
+    min-width: var(--node-width);
     background: white;
     border: calc(1px * var(--zoom-factor)) solid #bcbcbc;
     border-radius: var(--border-radius);
@@ -27,7 +28,8 @@
 .node-name {
     border: calc(1px * var(--zoom-factor)) solid #ddd;
     font-weight: bold;
-    width: var(--input-height-name);
+    width: auto;
+    min-width: 80px;
     background: white;
     user-select: text;
     -webkit-user-select: text;
@@ -65,8 +67,7 @@
 
 /* 字段行 */
 .field-row {
-    display: grid !important;
-    grid-template-columns: var(--input-height-key) auto var(--input-height-val) auto !important;
+    display: flex !important;
     align-items: center !important;
     padding: 0 var(--padding-sm) !important;
     border-bottom: calc(1px * var(--zoom-factor)) solid #f5f5f5 !important;
@@ -83,6 +84,12 @@
     height: calc(var(--font-size-base) * 1.8) !important;
     line-height: 1.4 !important;
     border-radius: var(--border-radius-sm) !important;
+    /* 自适应宽度 */
+    width: auto !important;
+    min-width: 100px !important;
+    flex: 0 0 auto !important;
+    /* 现代浏览器支持 */
+    field-sizing: content !important;
 }
 
 /* array类型的key值灰色且不可编辑 */
@@ -100,6 +107,14 @@
     height: calc(var(--font-size-base) * 1.8) !important;
     line-height: 1.4 !important;
     border-radius: var(--border-radius-sm) !important;
+    /* 自适应宽度 */
+    width: auto !important;
+    min-width: 100px !important;
+    flex: 0 0 auto !important;
+    /* 最大宽度限制，防止内容过长时占用太多空间 */
+    max-width: 300px !important;
+    /* 现代浏览器支持 */
+    field-sizing: content !important;
 }
 
 .field-row > .btn-del {

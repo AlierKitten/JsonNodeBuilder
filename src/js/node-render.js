@@ -69,12 +69,88 @@ function drawLine(x1, y1, x2, y2) {
     svgLayer.appendChild(path);
 }
 
-// 渲染节点
+// 动态调整输入框宽度以适应内容
+function autoResizeInput(input) {
+    // 创建临时span来测量文本宽度
+    const temp = document.createElement('span');
+    temp.style.cssText = `
+        position: absolute;
+        visibility: hidden;
+        white-space: nowrap;
+        font-size: ${getComputedStyle(input).fontSize};
+        font-family: ${getComputedStyle(input).fontFamily};
+        font-weight: ${getComputedStyle(input).fontWeight};
+        padding: ${getComputedStyle(input).padding};
+    `;
+    temp.textContent = input.value || input.placeholder || '';
+    document.body.appendChild(temp);
+    
+    const textWidth = temp.offsetWidth;
+    document.body.removeChild(temp);
+    
+    // 设置输入框宽度：文本宽度 + padding，保留最小100px
+    const minWidth = 100;
+    const padding = 12; // 左右padding
+    const newWidth = Math.max(textWidth + padding, minWidth);
+    
+    // 禁用 field-sizing，确保 JavaScript 控制宽度
+    input.style.fieldSizing = 'fixed';
+    input.style.width = newWidth + 'px';
+    
+    return newWidth;
+}
+
+// 同步同一行中 key 和 value 输入框的宽度
+function syncKeyValueWidths() {
+    document.querySelectorAll('.field-row').forEach(row => {
+        const keyInput = row.querySelector('.key-input');
+        const valInput = row.querySelector('.val-input');
+        
+        if (keyInput && valInput) {
+            // 创建一个隐藏的 span 来测量两者的文本宽度
+            const keyText = keyInput.value || keyInput.placeholder || '';
+            const valText = valInput.value || valInput.placeholder || '';
+            
+            const getTextWidth = (text, input) => {
+                const temp = document.createElement('span');
+                temp.style.cssText = `
+                    position: absolute;
+                    visibility: hidden;
+                    white-space: nowrap;
+                    font-size: ${getComputedStyle(input).fontSize};
+                    font-family: ${getComputedStyle(input).fontFamily};
+                    font-weight: ${getComputedStyle(input).fontWeight};
+                    padding: ${getComputedStyle(input).padding};
+                `;
+                temp.textContent = text;
+                document.body.appendChild(temp);
+                const width = temp.offsetWidth;
+                document.body.removeChild(temp);
+                return width;
+            };
+            
+            const keyWidth = getTextWidth(keyText, keyInput);
+            const valWidth = getTextWidth(valText, valInput);
+            
+            const minWidth = 100;
+            const padding = 12;
+            const maxWidth = Math.max(keyWidth, valWidth, minWidth) + padding;
+            
+            keyInput.style.fieldSizing = 'fixed';
+            valInput.style.fieldSizing = 'fixed';
+            keyInput.style.width = maxWidth + 'px';
+            valInput.style.width = maxWidth + 'px';
+        }
+    });
+}
+
+// 渲染节点（第一遍：创建DOM）
 function renderNode(node, parentId) {
     const el = document.createElement('div');
     el.className = `node ${node.id === 'root' ? 'root-node' : ''}`;
     el.style.left = (node.x * currentZoom) + 'px';
     el.style.top = (node.y * currentZoom) + 'px';
+    el.dataset.nodeId = node.id;
 
     const isRoot = node.id === 'root';
 
@@ -97,9 +173,9 @@ function renderNode(node, parentId) {
         const keyReadonlyAttr = isArray ? 'readonly' : '';
         const keyDisabledClass = isArray ? 'array-key' : '';
         row.innerHTML = `
-            <input class="key-input ${keyDisabledClass}" value="${f.key}" ${keyReadonlyAttr} oninput="updateField('${node.id}', '${f.id}', 'key', this.value)">
+            <input class="key-input ${keyDisabledClass}" value="${f.key}" ${keyReadonlyAttr} oninput="updateField('${node.id}', '${f.id}', 'key', this.value, this)">
             <span>:</span>
-            <input class="val-input" value="${f.value}" oninput="updateField('${node.id}', '${f.id}', 'value', this.value)">
+            <input class="val-input" value="${f.value}" oninput="updateField('${node.id}', '${f.id}', 'value', this.value, this)">
             <button class="btn-del" onclick="deleteField('${node.id}', '${f.id}')"></button>
         `;
         el.appendChild(row);
@@ -120,12 +196,95 @@ function renderNode(node, parentId) {
     // 递归子节点
     node.children.forEach((child) => {
         renderNode(child, node.id);
+    });
+}
+
+// 调整子节点位置（第二遍：基于实际渲染宽度）
+function repositionChildren(node) {
+    const el = nodesLayer.querySelector(`[data-node-id="${node.id}"]`);
+    if (!el) return;
+    
+    const actualWidth = el.offsetWidth / currentZoom;
+    node.actualWidth = actualWidth;
+    
+    // 调整直接子节点的x位置，然后递归处理
+    node.children.forEach((child) => {
+        child.x = node.x + actualWidth + 40;
+        repositionChildren(child);
+    });
+}
+
+// 更新所有节点DOM元素的位置
+function updateAllNodePositions(node) {
+    const el = nodesLayer.querySelector(`[data-node-id="${node.id}"]`);
+    if (el) {
+        el.style.left = (node.x * currentZoom) + 'px';
+        el.style.top = (node.y * currentZoom) + 'px';
+    }
+    node.children.forEach(child => {
+        updateAllNodePositions(child);
+    });
+}
+
+// 绘制所有连线（第三遍）
+function drawAllLines(node) {
+    const parentEl = nodesLayer.querySelector(`[data-node-id="${node.id}"]`);
+    if (!parentEl) return;
+
+    const parentWidth = node.actualWidth || parentEl.offsetWidth / currentZoom;
+
+    node.children.forEach((child) => {
         drawLine(
-            (node.x + 260) * currentZoom,
+            (node.x + parentWidth) * currentZoom,
             (node.y + 40) * currentZoom,
             child.x * currentZoom,
             (child.y + 40) * currentZoom
         );
+        drawAllLines(child);
+    });
+}
+
+// 重新定位节点及其所有祖先的子节点，并更新所有连线
+function repositionAndUpdateLines(node) {
+    // 找到根节点
+    const tab = getActiveTab();
+    let root = tab.treeData;
+    
+    // 更新所有节点的子节点位置（从根开始）
+    repositionChildren(root);
+    
+    // 更新所有节点DOM元素的位置
+    updateAllNodePositions(root);
+    
+    // 更新所有连线
+    svgLayer.innerHTML = '';
+    drawAllLines(root);
+    
+    // 同步JSON
+    syncJSON();
+}
+
+// 重新渲染并调整所有输入框宽度
+function renderWithInputResize() {
+    const tab = getActiveTab();
+    nodesLayer.innerHTML = '';
+    svgLayer.innerHTML = '';
+    
+    // 第一遍：渲染所有节点
+    renderNode(tab.treeData, null);
+    
+    // 第二遍：自动调整所有输入框宽度，同行 key/value 同步
+    syncKeyValueWidths();
+    
+    // 第三遍：获取实际宽度并调整子节点位置（延迟到下一个动画帧，确保输入框宽度已更新）
+    requestAnimationFrame(() => {
+        repositionChildren(tab.treeData);
+        
+        // 第四遍：绘制连线
+        drawAllLines(tab.treeData);
+        
+        syncJSON();
+        resizeCanvas();
     });
 }
 
@@ -134,7 +293,19 @@ function render() {
     const tab = getActiveTab();
     nodesLayer.innerHTML = '';
     svgLayer.innerHTML = '';
+    
+    // 第一遍：渲染所有节点
     renderNode(tab.treeData, null);
+    
+    // 第二遍：获取实际宽度并调整子节点位置
+    repositionChildren(tab.treeData);
+    
+    // 第三遍：绘制连线
+    drawAllLines(tab.treeData);
+    
+    // 第四遍：自动调整所有输入框宽度，同行 key/value 同步
+    syncKeyValueWidths();
+    
     syncJSON();
     resizeCanvas();
 }
@@ -144,15 +315,69 @@ window.updateNodeName = (id, val) => {
     const tab = getActiveTab();
     const n = findNode(tab.treeData, id);
     if (n) n.name = val;
-    syncJSON();
+    // 延迟执行，等待布局完成
+    requestAnimationFrame(() => {
+        repositionAndUpdateLines(n);
+    });
 };
-window.updateField = (id, fId, type, val) => {
+// 实时同步同行 key/value 宽度
+function syncRowWidths(inputEl) {
+    const row = inputEl.closest('.field-row');
+    if (!row) return;
+    
+    const keyInput = row.querySelector('.key-input');
+    const valInput = row.querySelector('.val-input');
+    if (!keyInput || !valInput) return;
+    
+    const keyText = keyInput.value || keyInput.placeholder || '';
+    const valText = valInput.value || valInput.placeholder || '';
+    
+    const getTextWidth = (text, input) => {
+        const temp = document.createElement('span');
+        temp.style.cssText = `
+            position: absolute;
+            visibility: hidden;
+            white-space: nowrap;
+            font-size: ${getComputedStyle(input).fontSize};
+            font-family: ${getComputedStyle(input).fontFamily};
+            font-weight: ${getComputedStyle(input).fontWeight};
+            padding: ${getComputedStyle(input).padding};
+        `;
+        temp.textContent = text;
+        document.body.appendChild(temp);
+        const width = temp.offsetWidth;
+        document.body.removeChild(temp);
+        return width;
+    };
+    
+    const keyWidth = getTextWidth(keyText, keyInput);
+    const valWidth = getTextWidth(valText, valInput);
+    
+    const minWidth = 100;
+    const padding = 12;
+    const maxWidth = Math.max(keyWidth, valWidth, minWidth) + padding;
+    
+    keyInput.style.fieldSizing = 'fixed';
+    valInput.style.fieldSizing = 'fixed';
+    keyInput.style.width = maxWidth + 'px';
+    valInput.style.width = maxWidth + 'px';
+}
+
+window.updateField = (id, fId, type, val, inputEl) => {
     const tab = getActiveTab();
     const n = findNode(tab.treeData, id);
     const f = n.fields.find(item => item.id === fId);
     if (f) f[type] = val;
-    syncJSON();
+    
+    // 实时同步同行宽度（同步执行，立即响应）
+    syncRowWidths(inputEl);
+    
+    // 延迟更新节点位置和连线
+    requestAnimationFrame(() => {
+        repositionAndUpdateLines(n);
+    });
 };
+
 window.addField = (id) => {
     const tab = getActiveTab();
     const n = findNode(tab.treeData, id);
@@ -190,17 +415,21 @@ window.addChild = (id, type) => {
     const p = findNode(tab.treeData, id);
     // 使用基于父节点计数的名称
     const newNodeName = generateFieldName(p, type);
+    // 先获取父节点当前的实际宽度（如果有的话）
+    const parentEl = nodesLayer.querySelector(`[data-node-id="${id}"]`);
+    const parentWidth = parentEl ? parentEl.offsetWidth / currentZoom : (p.actualWidth || 260);
+    
     const newNode = {
         id: "n" + Date.now(),
         name: newNodeName,
         type: type,
-        x: p.x + 300,
+        x: p.x + parentWidth + 40, // 根据父节点实际宽度 + 间距
         y: p.y,
         fields: [],
         children: [],
-        childNameCounters: { key: 0, object: 0, array: 0 }  // 初始化新节点的计数器
+        childNameCounters: { key: 0, object: 0, array: 0 }
     };
-    // 添加默认字段，使用新节点自己的计数器
+    // 添加默认字段
     const defaultKeyName = generateFieldName(newNode, 'key');
     newNode.fields.push({ id: "f" + Date.now(), key: defaultKeyName, value: "val" });
     
