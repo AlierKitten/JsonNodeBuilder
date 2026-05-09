@@ -41,7 +41,12 @@ function getActiveTab() {
 function renderTabBar() {
     var tabList = document.getElementById('tab-list');
     var addBtn = document.getElementById('tab-add-btn');
-    tabList.innerHTML = '';
+    
+    // 只移除标签项，保留添加按钮
+    var tabItems = tabList.querySelectorAll('.tab-item');
+    tabItems.forEach(function(item) {
+        item.remove();
+    });
 
     tabs.forEach(function(tab, index) {
         var tabItem = document.createElement('div');
@@ -65,7 +70,8 @@ function renderTabBar() {
 
         tabItem.appendChild(title);
         tabItem.appendChild(closeBtn);
-        tabList.appendChild(tabItem);
+        // 在添加按钮之前插入标签项
+        tabList.insertBefore(tabItem, addBtn);
     });
 
     addBtn.disabled = tabs.length >= MAX_TABS;
