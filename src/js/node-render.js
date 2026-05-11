@@ -100,48 +100,74 @@ function autoResizeInput(input) {
     return newWidth;
 }
 
-// 同步同一行中 key 和 value 输入框的宽度
-function syncKeyValueWidths() {
-    document.querySelectorAll('.field-row').forEach(row => {
+// 同步整个节点下所有输入框的宽度（使用最大宽度统一视觉）
+function syncNodeWidths(nodeId) {
+    const nodeEl = nodesLayer.querySelector(`[data-node-id="${nodeId}"]`);
+    if (!nodeEl) return;
+    
+    const rows = nodeEl.querySelectorAll('.field-row');
+    if (rows.length === 0) return;
+    
+    // CSS 中 padding = padding-sm*0.5 = 8*0.5 = 4px，左右各4px，总共 8px
+    const paddingTotal = 8;
+    
+    // 使用 Canvas 测量文本内容宽度
+    const canvas = syncNodeWidths._canvas || (syncNodeWidths._canvas = document.createElement('canvas'));
+    const ctx = canvas.getContext('2d');
+    
+    const getTextWidth = (text) => {
+        // 使用项目中实际字体：12px sans-serif
+        ctx.font = '400 12px sans-serif';
+        return ctx.measureText(text || ' ').width;
+    };
+    
+    // 收集所有输入框的文本内容宽度
+    let maxContentWidth = 0;
+    
+    rows.forEach(row => {
         const keyInput = row.querySelector('.key-input');
         const valInput = row.querySelector('.val-input');
         
-        if (keyInput && valInput) {
-            // 创建一个隐藏的 span 来测量两者的文本宽度
-            const keyText = keyInput.value || keyInput.placeholder || '';
-            const valText = valInput.value || valInput.placeholder || '';
-            
-            const getTextWidth = (text, input) => {
-                const temp = document.createElement('span');
-                temp.style.cssText = `
-                    position: absolute;
-                    visibility: hidden;
-                    white-space: nowrap;
-                    font-size: ${getComputedStyle(input).fontSize};
-                    font-family: ${getComputedStyle(input).fontFamily};
-                    font-weight: ${getComputedStyle(input).fontWeight};
-                    padding: ${getComputedStyle(input).padding};
-                `;
-                temp.textContent = text;
-                document.body.appendChild(temp);
-                const width = temp.offsetWidth;
-                document.body.removeChild(temp);
-                return width;
-            };
-            
-            const keyWidth = getTextWidth(keyText, keyInput);
-            const valWidth = getTextWidth(valText, valInput);
-            
-            const minWidth = 100;
-            const padding = 12;
-            const maxWidth = Math.max(keyWidth, valWidth, minWidth) + padding;
-            
-            keyInput.style.fieldSizing = 'fixed';
-            valInput.style.fieldSizing = 'fixed';
-            keyInput.style.width = maxWidth + 'px';
-            valInput.style.width = maxWidth + 'px';
-        }
+        [keyInput, valInput].forEach(input => {
+            if (input) {
+                const text = input.value || input.placeholder || ' ';
+                const textWidth = getTextWidth(text);
+                // 输入框总宽度 = 文本内容宽度 + padding
+                const totalWidth = textWidth + paddingTotal;
+                if (totalWidth > maxContentWidth) maxContentWidth = totalWidth;
+            }
+        });
     });
+    
+    // 设置最小宽度：约能容纳8-10个w字符（12px字体w约7px，80px约11个w）
+    let maxWidth = Math.max(Math.ceil(maxContentWidth), 78);
+    
+    // 应用统一宽度
+    rows.forEach(row => {
+        const keyInput = row.querySelector('.key-input');
+        const valInput = row.querySelector('.val-input');
+        
+        [keyInput, valInput].forEach(input => {
+            if (input) {
+                input.style.width = maxWidth + 'px';
+            }
+        });
+    });
+}
+
+// 同步所有节点的输入框宽度
+function syncAllNodeWidths() {
+    const tab = getActiveTab();
+    const allNodes = getAllNodes(tab.treeData);
+    
+    allNodes.forEach(node => {
+        syncNodeWidths(node.id);
+    });
+}
+
+// 同步同一行中 key 和 value 输入框的宽度（保留作为备用）
+function syncKeyValueWidths() {
+    syncAllNodeWidths();
 }
 
 // 渲染节点（第一遍：创建DOM）
@@ -273,8 +299,8 @@ function renderWithInputResize() {
     // 第一遍：渲染所有节点
     renderNode(tab.treeData, null);
     
-    // 第二遍：自动调整所有输入框宽度，同行 key/value 同步
-    syncKeyValueWidths();
+    // 第二遍：自动调整所有输入框宽度（同一节点下使用统一最大宽度）
+    syncAllNodeWidths();
     
     // 第三遍：获取实际宽度并调整子节点位置（延迟到下一个动画帧，确保输入框宽度已更新）
     requestAnimationFrame(() => {
@@ -303,11 +329,22 @@ function render() {
     // 第三遍：绘制连线
     drawAllLines(tab.treeData);
     
-    // 第四遍：自动调整所有输入框宽度，同行 key/value 同步
-    syncKeyValueWidths();
-    
     syncJSON();
     resizeCanvas();
+    
+    // 第四遍：延迟统一输入框宽度（确保 DOM 完全渲染后再获取实际宽度）
+    requestAnimationFrame(() => {
+        syncAllNodeWidths();
+        
+        // 宽度统一后，再次调整节点位置和连线
+        requestAnimationFrame(() => {
+            repositionChildren(tab.treeData);
+            updateAllNodePositions(tab.treeData);
+            svgLayer.innerHTML = '';
+            drawAllLines(tab.treeData);
+            resizeCanvas();
+        });
+    });
 }
 
 // 增删改操作（通过 window 暴露给 HTML onclick）
@@ -320,47 +357,18 @@ window.updateNodeName = (id, val) => {
         repositionAndUpdateLines(n);
     });
 };
-// 实时同步同行 key/value 宽度
-function syncRowWidths(inputEl) {
-    const row = inputEl.closest('.field-row');
-    if (!row) return;
+// 实时同步整个节点的输入框宽度（使用统一最大宽度）
+function syncNodeRowWidths(inputEl) {
+    // 找到当前输入框所属的节点
+    const nodeEl = inputEl.closest('.node');
+    if (!nodeEl) return;
     
-    const keyInput = row.querySelector('.key-input');
-    const valInput = row.querySelector('.val-input');
-    if (!keyInput || !valInput) return;
+    const nodeId = nodeEl.dataset.nodeId;
     
-    const keyText = keyInput.value || keyInput.placeholder || '';
-    const valText = valInput.value || valInput.placeholder || '';
-    
-    const getTextWidth = (text, input) => {
-        const temp = document.createElement('span');
-        temp.style.cssText = `
-            position: absolute;
-            visibility: hidden;
-            white-space: nowrap;
-            font-size: ${getComputedStyle(input).fontSize};
-            font-family: ${getComputedStyle(input).fontFamily};
-            font-weight: ${getComputedStyle(input).fontWeight};
-            padding: ${getComputedStyle(input).padding};
-        `;
-        temp.textContent = text;
-        document.body.appendChild(temp);
-        const width = temp.offsetWidth;
-        document.body.removeChild(temp);
-        return width;
-    };
-    
-    const keyWidth = getTextWidth(keyText, keyInput);
-    const valWidth = getTextWidth(valText, valInput);
-    
-    const minWidth = 100;
-    const padding = 12;
-    const maxWidth = Math.max(keyWidth, valWidth, minWidth) + padding;
-    
-    keyInput.style.fieldSizing = 'fixed';
-    valInput.style.fieldSizing = 'fixed';
-    keyInput.style.width = maxWidth + 'px';
-    valInput.style.width = maxWidth + 'px';
+    // 在下一个动画帧执行，确保输入内容已更新并渲染
+    requestAnimationFrame(() => {
+        syncNodeWidths(nodeId);
+    });
 }
 
 window.updateField = (id, fId, type, val, inputEl) => {
@@ -369,8 +377,8 @@ window.updateField = (id, fId, type, val, inputEl) => {
     const f = n.fields.find(item => item.id === fId);
     if (f) f[type] = val;
     
-    // 实时同步同行宽度（同步执行，立即响应）
-    syncRowWidths(inputEl);
+    // 实时同步整个节点的宽度（同步执行，立即响应）
+    syncNodeRowWidths(inputEl);
     
     // 延迟更新节点位置和连线
     requestAnimationFrame(() => {
