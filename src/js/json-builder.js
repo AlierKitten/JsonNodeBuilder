@@ -230,6 +230,44 @@ function importJSONFromText(jsonText) {
     }
 }
 
+// ===== 获取时间戳并复制 =====
+
+window.generateAndCopyTimestamp = () => {
+    const timestamp = Date.now().toString();
+    navigator.clipboard.writeText(timestamp).then(() => {
+        const btn = document.getElementById('timestamp-btn');
+        const originalText = btn.innerText;
+        btn.innerText = '已复制';
+        btn.style.background = '#52c41a';
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('复制失败:', err);
+        alert('复制失败，请手动复制: ' + timestamp);
+    });
+};
+
+// ===== 获取UUID4并复制 =====
+
+window.generateAndCopyUUID = () => {
+    const uuid = crypto.randomUUID().toUpperCase();
+    navigator.clipboard.writeText(uuid).then(() => {
+        const btn = document.getElementById('uuid-btn');
+        const originalText = btn.innerText;
+        btn.innerText = '已复制';
+        btn.style.background = '#52c41a';
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('复制失败:', err);
+        alert('复制失败，请手动复制: ' + uuid);
+    });
+};
+
 // ===== 格式化 JSON =====
 
 window.formatJSON = () => {

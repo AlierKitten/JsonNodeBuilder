@@ -29,7 +29,7 @@
     gap: 8px;
 }
 
-.btn-copy, .btn-format {
+.btn-copy, .btn-format, .btn-timestamp, .btn-uuid {
     padding: 6px 12px;
     background: var(--primary);
     color: white;
@@ -40,11 +40,11 @@
     transition: background 0.2s;
 }
 
-.btn-copy:hover, .btn-format:hover {
+.btn-copy:hover, .btn-format:hover, .btn-timestamp:hover, .btn-uuid:hover {
     background: #357abd;
 }
 
-.btn-copy:active, .btn-format:active {
+.btn-copy:active, .btn-format:active, .btn-timestamp:active, .btn-uuid:active {
     background: #2968a8;
 }
 
@@ -58,6 +58,30 @@
 
 .btn-format:active {
     background: #1e8449;
+}
+
+.btn-timestamp {
+    background: #8e44ad;
+}
+
+.btn-timestamp:hover {
+    background: #7d3c98;
+}
+
+.btn-timestamp:active {
+    background: #6c3483;
+}
+
+.btn-uuid {
+    background: #e67e22;
+}
+
+.btn-uuid:hover {
+    background: #cf711f;
+}
+
+.btn-uuid:active {
+    background: #b8621b;
 }
 
 #json-container {
