@@ -24,7 +24,12 @@
     align-items: center;
 }
 
-.sidebar-actions {
+.sidebar-actions-left {
+    display: flex;
+    gap: 8px;
+}
+
+.sidebar-actions-right {
     display: flex;
     gap: 8px;
 }
