@@ -30,6 +30,7 @@ class TabState {
         this.panX = 0;
         this.panY = 0;
         this.currentZoom = 1;
+        this.sidebarWidth = 400;
     }
 }
 
@@ -192,6 +193,7 @@ function saveCurrentTabState() {
     tab.panX = panX;
     tab.panY = panY;
     tab.currentZoom = currentZoom;
+    tab.sidebarWidth = parseInt(sidebar.style.width) || 400;
 }
 
 // 恢复当前活跃标签的状态
@@ -201,6 +203,7 @@ function restoreActiveTabState() {
     panX = tab.panX;
     panY = tab.panY;
     currentZoom = tab.currentZoom;
+    sidebar.style.width = (tab.sidebarWidth || 400) + 'px';
     isDragging = false;
     updateZoomStyles();
     applyTransform();

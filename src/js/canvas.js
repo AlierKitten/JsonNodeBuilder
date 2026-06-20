@@ -169,6 +169,12 @@ document.addEventListener('mouseup', () => {
     isResizing = false;
     resizer.classList.remove('resizing');
 
+    // 将当前宽度保存到活跃标签页
+    const tab = getActiveTab();
+    if (tab) {
+        tab.sidebarWidth = parseInt(sidebar.style.width) || 400;
+    }
+
     // 移除遮罩层
     const overlay = document.getElementById('resizer-overlay');
     if (overlay) {
