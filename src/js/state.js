@@ -9,6 +9,7 @@ const lineNumbers = document.getElementById('line-numbers');
 const canvasContainer = document.getElementById('canvas-container');
 const canvasContent = document.getElementById('canvas-content');
 const sidebar = document.getElementById('sidebar');
+const resizer = document.getElementById('resizer');
 
 // 拖动相关变量（全局，切换标签时恢复/保存）
 var isDragging = false;

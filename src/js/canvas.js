@@ -133,3 +133,45 @@ window.addEventListener('resize', () => {
     resizeCanvas();
     applyTransform();
 });
+
+// ===== 分割条拖拽调整宽度 =====
+
+let isResizing = false;
+
+resizer.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    resizer.classList.add('resizing');
+
+    // 创建遮罩层，防止拖拽过程中鼠标移出窗口或经过iframe等元素时丢失事件
+    const overlay = document.createElement('div');
+    overlay.id = 'resizer-overlay';
+    document.body.appendChild(overlay);
+
+    e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+
+    const workspaceRect = document.getElementById('workspace').getBoundingClientRect();
+    const newSidebarWidth = workspaceRect.right - e.clientX;
+
+    // 限制最小和最大宽度
+    const minWidth = 250;
+    const maxWidth = 800;
+    const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newSidebarWidth));
+
+    sidebar.style.width = clampedWidth + 'px';
+});
+
+document.addEventListener('mouseup', () => {
+    if (!isResizing) return;
+    isResizing = false;
+    resizer.classList.remove('resizing');
+
+    // 移除遮罩层
+    const overlay = document.getElementById('resizer-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+});

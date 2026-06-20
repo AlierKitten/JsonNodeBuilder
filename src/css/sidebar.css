@@ -1,9 +1,10 @@
 /* 侧边栏 */
 #sidebar {
     width: 400px;
+    min-width: 250px;
+    max-width: 800px;
     background: #ffffff;
     color: #333;
-    border-left: 2px solid #e0e0e0;
     display: flex;
     flex-direction: column;
     user-select: none;

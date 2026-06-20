@@ -19,3 +19,30 @@ html {
     flex: 1;
     min-height: 0;
 }
+
+/* 分割条 */
+#resizer {
+    width: 6px;
+    background: #e0e0e0;
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background 0.2s;
+    position: relative;
+    z-index: 10;
+}
+
+#resizer:hover,
+#resizer.resizing {
+    background: #4a90d9;
+}
+
+/* 拖拽时的遮罩，防止iframe等干扰 */
+#resizer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    cursor: col-resize;
+}
