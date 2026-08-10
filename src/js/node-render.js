@@ -331,6 +331,7 @@ function render() {
     
     syncJSON();
     resizeCanvas();
+    renderMinimap();
     
     // 第四遍：延迟统一输入框宽度（确保 DOM 完全渲染后再获取实际宽度）
     requestAnimationFrame(() => {
@@ -343,6 +344,7 @@ function render() {
             svgLayer.innerHTML = '';
             drawAllLines(tab.treeData);
             resizeCanvas();
+            renderMinimap();
         });
     });
 }

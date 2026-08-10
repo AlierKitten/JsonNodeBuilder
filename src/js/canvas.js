@@ -4,6 +4,7 @@
 function applyTransform() {
     canvasContent.style.transform = `translate3d(${panX}px, ${panY}px, 0)`;
     updateZoomInfo();
+    renderMinimap();
 }
 
 // 更新缩放相关的CSS样式
@@ -132,6 +133,120 @@ canvasContainer.addEventListener('wheel', (e) => {
 window.addEventListener('resize', () => {
     resizeCanvas();
     applyTransform();
+    renderMinimap();
+});
+
+// ===== 鸟瞰图（Minimap） =====
+
+const minimap = document.getElementById('minimap');
+const minimapSvg = document.getElementById('minimap-svg');
+
+// 根据节点世界坐标计算鸟瞰图
+function renderMinimap() {
+    const tab = getActiveTab();
+    if (!tab || !minimapSvg) return;
+
+    const nodes = getAllNodes(tab.treeData);
+    if (nodes.length === 0) {
+        minimapSvg.innerHTML = '';
+        return;
+    }
+
+    // 1. 计算所有节点的世界坐标包围盒（不含缩放）
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const nodeBounds = nodes.map(n => {
+        const w = n.actualWidth || 260;
+        const h = getNodeHeight(n) / currentZoom;
+        const x = n.x, y = n.y;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x + w);
+        maxY = Math.max(maxY, y + h);
+        return { x, y, w, h };
+    });
+
+    // 预留边距，避免节点贴边
+    const margin = 40;
+    minX -= margin; minY -= margin;
+    maxX += margin; maxY += margin;
+    const worldW = (maxX - minX) || 1;
+    const worldH = (maxY - minY) || 1;
+
+    // 2. 计算缩放比例，使整个图适配鸟瞰图
+    const rect = minimap.getBoundingClientRect();
+    const pad = 8;
+    const mw = rect.width - pad * 2;
+    const mh = rect.height - pad * 2;
+    const scale = Math.min(mw / worldW, mh / worldH) || 1;
+    const offX = pad + (mw - worldW * scale) / 2;
+    const offY = pad + (mh - worldH * scale) / 2;
+
+    const toMx = wx => offX + (wx - minX) * scale;
+    const toMy = wy => offY + (wy - minY) * scale;
+
+    // 3. 绘制节点（抽象为圆角矩形）
+    let svg = '';
+    nodeBounds.forEach(b => {
+        const rx = toMx(b.x);
+        const ry = toMy(b.y);
+        const rw = Math.max(b.w * scale, 2);
+        const rh = Math.max(b.h * scale, 2);
+        const r = Math.min(3, rw / 2, rh / 2);
+        svg += `<rect class="mini-node" x="${rx.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" rx="${r.toFixed(1)}" ry="${r.toFixed(1)}"></rect>`;
+    });
+
+    // 4. 绘制当前视口框
+    const vx = (0 - panX) / currentZoom;
+    const vy = (0 - panY) / currentZoom;
+    const vw = canvasContainer.clientWidth / currentZoom;
+    const vh = canvasContainer.clientHeight / currentZoom;
+    const vrx = toMx(vx);
+    const vry = toMy(vy);
+    const vrw = vw * scale;
+    const vrh = vh * scale;
+    svg += `<rect class="mini-viewport" x="${vrx.toFixed(1)}" y="${vry.toFixed(1)}" width="${vrw.toFixed(1)}" height="${vrh.toFixed(1)}" rx="2" ry="2"></rect>`;
+
+    minimapSvg.innerHTML = svg;
+
+    // 保存映射参数供点击导航使用
+    minimapSvg._map = { minX, minY, scale, offX, offY, worldW, worldH, mw, mh, pad };
+}
+
+// 鸟瞰图点击/拖拽导航：将视口中心移动到对应世界坐标
+function navigateFromMinimap(clientX, clientY) {
+    const map = minimapSvg._map;
+    if (!map) return;
+    const rect = minimap.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+
+    // 鸟瞰图像素 -> 世界坐标
+    const worldX = map.minX + (mx - map.offX) / map.scale;
+    const worldY = map.minY + (my - map.offY) / map.scale;
+
+    // 使该世界点居中于画布
+    panX = canvasContainer.clientWidth / 2 - worldX * currentZoom;
+    panY = canvasContainer.clientHeight / 2 - worldY * currentZoom;
+    applyTransform();
+    renderMinimap();
+}
+
+let isMinimapDragging = false;
+
+minimap.addEventListener('mousedown', (e) => {
+    isMinimapDragging = true;
+    navigateFromMinimap(e.clientX, e.clientY);
+    e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isMinimapDragging) {
+        navigateFromMinimap(e.clientX, e.clientY);
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isMinimapDragging = false;
 });
 
 // ===== 分割条拖拽调整宽度 =====
