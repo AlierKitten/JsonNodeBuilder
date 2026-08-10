@@ -4,6 +4,8 @@
 
 A visual JSON builder built with Tauri + Vanilla JS, featuring a node-based editor with real-time JSON generation.
 
+<p align="center"><img src="./docs/home.png" alt="Home" width="800"></p>
+
 ## Features
 
 - Visual node editor

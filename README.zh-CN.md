@@ -4,6 +4,8 @@
 
 一个基于 Tauri + Vanilla JS 的可视化 JSON 构建器，支持节点式编辑和实时 JSON 生成。
 
+<p align="center"><img src="./docs/home.png" alt="Home" width="800"></p>
+
 ## 功能特性
 
 - 可视化节点编辑器
