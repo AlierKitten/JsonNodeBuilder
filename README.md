@@ -1,6 +1,6 @@
-<p align="center">[中文](README.zh-CN.md) | English<br></p>
-
 # Visual JSON Builder Pro
+
+<p align="center"><a href="./README.zh-CN.md">中文</a> | English<br></p>
 
 A visual JSON builder built with Tauri + Vanilla JS, featuring a node-based editor with real-time JSON generation.
 

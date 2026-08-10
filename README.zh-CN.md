@@ -1,6 +1,6 @@
-<p align="center">中文 | [English](README.md)<br></p>
-
 # Visual JSON Builder Pro
+
+<p align="center">中文 | <a href="./README.md">English</a><br></p>
 
 一个基于 Tauri + Vanilla JS 的可视化 JSON 构建器，支持节点式编辑和实时 JSON 生成。
 
