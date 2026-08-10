@@ -268,6 +268,31 @@ window.generateAndCopyUUID = () => {
     });
 };
 
+// ===== 获取NanoID并复制 =====
+
+window.generateAndCopyNanoID = () => {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
+    let id = '';
+    const bytes = new Uint8Array(21);
+    crypto.getRandomValues(bytes);
+    for (let i = 0; i < bytes.length; i++) {
+        id += alphabet[bytes[i] & 63];
+    }
+    navigator.clipboard.writeText(id).then(() => {
+        const btn = document.getElementById('nanoid-btn');
+        const originalText = btn.innerText;
+        btn.innerText = '已复制';
+        btn.style.background = '#52c41a';
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('复制失败:', err);
+        alert('复制失败，请手动复制: ' + id);
+    });
+};
+
 // ===== 格式化 JSON =====
 
 window.formatJSON = () => {

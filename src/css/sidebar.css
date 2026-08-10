@@ -35,7 +35,7 @@
     gap: 8px;
 }
 
-.btn-copy, .btn-format, .btn-timestamp, .btn-uuid {
+.btn-copy, .btn-format, .btn-timestamp, .btn-uuid, .btn-nanoid {
     padding: 6px 12px;
     background: var(--primary);
     color: white;
@@ -46,11 +46,11 @@
     transition: background 0.2s;
 }
 
-.btn-copy:hover, .btn-format:hover, .btn-timestamp:hover, .btn-uuid:hover {
+.btn-copy:hover, .btn-format:hover, .btn-timestamp:hover, .btn-uuid:hover, .btn-nanoid:hover {
     background: #357abd;
 }
 
-.btn-copy:active, .btn-format:active, .btn-timestamp:active, .btn-uuid:active {
+.btn-copy:active, .btn-format:active, .btn-timestamp:active, .btn-uuid:active, .btn-nanoid:active {
     background: #2968a8;
 }
 
