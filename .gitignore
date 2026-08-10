@@ -28,3 +28,4 @@ dist-ssr
 Cargo.lock
 src-tauri/target
 src-tauri/Cargo.lock
+package-lock.json
